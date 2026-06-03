@@ -113,10 +113,28 @@
       "services": "Services",
       "schedule": "Schedule",
       "bookings": "Bookings",
+      "embed": "Embedded UI",
       "settings": "Settings",
       "staff": "Staff Team",
       "logout": "Logout",
       "adminPanel": "Admin Panel"
+    },
+    "embed": {
+      "title": "Embedded UI Widget Generator",
+      "subtitle": "Configure and preview how NexCal will look when embedded on other websites.",
+      "themeLabel": "Visual Theme",
+      "themeBlue": "Sleek Blue (Default)",
+      "themeMono": "Professional Monochrome (Black & White)",
+      "embedModeLabel": "Embed Mode Settings",
+      "embedModeDesc": "Hides page headers, footers, and sets transparent backgrounds for seamless embedding.",
+      "copySnippet": "Copy Embed Code",
+      "snippetCopied": "Copied to clipboard!",
+      "snippetInstructions": "Copy and paste this HTML snippet into your website builder (WordPress, Webflow, custom HTML) to integrate the scheduling calendar.",
+      "livePreview": "Interactive Live Preview",
+      "noOrgError": "You must belong to an organization with a valid URL slug to use embedding.",
+      "previewWidth": "Preview Container Width",
+      "previewHeight": "Preview Container Height",
+      "viewExternal": "Open booking page directly"
     },
     "dashboard": {
       "welcome": "Welcome, {name} 👋",

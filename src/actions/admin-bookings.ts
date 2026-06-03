@@ -8,6 +8,7 @@ import { notifyBookingConfirmed, notifyBookingCancelled } from "@/lib/whatsapp";
 import { pushBookingToCalendar } from "@/lib/gcal";
 import { getDataScope } from "@/lib/rbac";
 import { getTranslator } from "@/lib/i18n/server";
+import { triggerWebhook } from "@/lib/webhooks";
 
 // ============================================================
 // Tipe & Interface
@@ -145,7 +146,13 @@ export async function updateBookingStatus(
       where: { id: bookingId, ...scope.userFilter },
       include: {
         serviceType: { select: { name: true, duration: true, isVirtual: true } },
-        user: { select: { clinicName: true, organizationId: true } },
+        user: {
+          select: {
+            clinicName: true,
+            organizationId: true,
+            organization: { select: { slug: true } },
+          },
+        },
       },
     });
 
@@ -224,6 +231,35 @@ export async function updateBookingStatus(
     } else if (status === "CANCELLED") {
       notifyBookingCancelled(notifInfo, cancelReason);
     }
+
+    // Trigger Webhook for n8n/Automation
+    const eventName =
+      status === "CONFIRMED"
+        ? "booking.confirmed"
+        : status === "CANCELLED"
+        ? "booking.cancelled"
+        : status === "COMPLETED"
+        ? "booking.completed"
+        : "booking.noshow";
+
+    triggerWebhook(eventName, {
+      orgSlug: booking.user.organization?.slug || null,
+      booking: {
+        id: booking.id,
+        patientName: booking.patientName,
+        patientPhone: booking.patientPhone,
+        serviceName: booking.serviceType.name,
+        date: format(booking.date, "yyyy-MM-dd"),
+        startTime: format(booking.startTime, "HH:mm"),
+        endTime: format(booking.endTime, "HH:mm"),
+        status,
+        cancelReason: cancelReason || null,
+        totalPrice: booking.totalPrice,
+        paymentStatus: booking.paymentStatus,
+        manageUrl,
+        providerName: booking.user.clinicName || "",
+      },
+    });
 
     revalidatePath("/admin/bookings");
     revalidatePath("/admin/dashboard");

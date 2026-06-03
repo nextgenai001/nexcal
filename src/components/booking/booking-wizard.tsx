@@ -58,10 +58,12 @@ function ProviderSelector({
   providers,
   selected,
   onSelect,
+  theme = "blue",
 }: {
   providers: Provider[];
   selected: string | null;
   onSelect: (id: string) => void;
+  theme?: "blue" | "mono";
 }) {
   const { t } = useI18n();
 
@@ -93,7 +95,9 @@ function ProviderSelector({
               onClick={() => onSelect(p.id)}
               className={`group relative flex items-center gap-3 rounded-xl border-2 p-4 text-left transition-all ${
                 isActive
-                  ? "border-blue-500 bg-blue-50 shadow-md shadow-blue-100"
+                  ? theme === "mono"
+                    ? "border-slate-900 bg-slate-50 shadow-md shadow-slate-100"
+                    : "border-blue-500 bg-blue-50 shadow-md shadow-blue-100"
                   : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
               }`}
             >
@@ -101,7 +105,9 @@ function ProviderSelector({
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                   isActive
-                    ? "bg-blue-600 text-white"
+                    ? theme === "mono"
+                      ? "bg-slate-900 text-white"
+                      : "bg-blue-600 text-white"
                     : "bg-slate-100 text-slate-500"
                 }`}
               >
@@ -121,7 +127,9 @@ function ProviderSelector({
                 )}
               </div>
               {isActive && (
-                <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
+                <div className={`absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full ${
+                  theme === "mono" ? "bg-slate-900" : "bg-blue-500"
+                }`}>
                   <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
@@ -143,18 +151,20 @@ function ServiceSelector({
   selected,
   onSelect,
   loading,
+  theme = "blue",
 }: {
   services: Service[];
   selected: string | null;
   onSelect: (id: string) => void;
   loading: boolean;
+  theme?: "blue" | "mono";
 }) {
   const { t, locale } = useI18n();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <svg className="h-6 w-6 animate-spin text-blue-500" viewBox="0 0 24 24" fill="none">
+        <svg className={`h-6 w-6 animate-spin ${theme === "mono" ? "text-slate-800" : "text-blue-500"}`} viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -186,7 +196,9 @@ function ServiceSelector({
               onClick={() => onSelect(s.id)}
               className={`group relative flex flex-col rounded-xl border-2 p-4 text-left transition-all ${
                 isActive
-                  ? "border-blue-500 bg-blue-50 shadow-md shadow-blue-100"
+                  ? theme === "mono"
+                    ? "border-slate-900 bg-slate-50 shadow-md shadow-slate-100"
+                    : "border-blue-500 bg-blue-50 shadow-md shadow-blue-100"
                   : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
               }`}
             >
@@ -225,7 +237,9 @@ function ServiceSelector({
                 )}
               </div>
               {isActive && (
-                <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
+                <div className={`absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full ${
+                  theme === "mono" ? "bg-slate-900" : "bg-blue-500"
+                }`}>
                   <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
@@ -245,9 +259,11 @@ function ServiceSelector({
 function CalendarPicker({
   selectedDate,
   onSelect,
+  theme = "blue",
 }: {
   selectedDate: Date | null;
   onSelect: (date: Date) => void;
+  theme?: "blue" | "mono";
 }) {
   const { t, locale } = useI18n();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -322,11 +338,15 @@ function CalendarPicker({
                 onClick={() => onSelect(day)}
                 className={`flex h-9 w-full items-center justify-center rounded-lg text-sm transition-all ${
                   isSelected
-                    ? "bg-blue-600 font-semibold text-white shadow-sm"
+                    ? theme === "mono"
+                      ? "bg-slate-900 font-semibold text-white shadow-sm hover:bg-slate-800"
+                      : "bg-blue-600 font-semibold text-white shadow-sm"
                     : isPast
                       ? "cursor-not-allowed text-slate-300"
                       : isToday
-                        ? "border border-blue-200 bg-blue-50 font-medium text-blue-700 hover:bg-blue-100"
+                        ? theme === "mono"
+                          ? "border border-slate-300 bg-slate-100 font-medium text-slate-800 hover:bg-slate-200"
+                          : "border border-blue-200 bg-blue-50 font-medium text-blue-700 hover:bg-blue-100"
                         : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
@@ -348,18 +368,20 @@ function SlotPicker({
   selected,
   onSelect,
   loading,
+  theme = "blue",
 }: {
   slots: TimeSlot[];
   selected: string | null;
   onSelect: (time: string) => void;
   loading: boolean;
+  theme?: "blue" | "mono";
 }) {
   const { t } = useI18n();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <svg className="h-6 w-6 animate-spin text-blue-500" viewBox="0 0 24 24" fill="none">
+        <svg className={`h-6 w-6 animate-spin ${theme === "mono" ? "text-slate-800" : "text-blue-500"}`} viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -412,9 +434,13 @@ function SlotPicker({
               onClick={() => onSelect(slot.startTime)}
               className={`rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                 isSelected
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                  ? theme === "mono"
+                    ? "bg-slate-900 text-white shadow-md shadow-slate-200"
+                    : "bg-blue-600 text-white shadow-md shadow-blue-200"
                   : slot.available
-                    ? "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
+                    ? theme === "mono"
+                      ? "border border-slate-200 bg-white text-slate-700 hover:border-slate-800 hover:bg-slate-50"
+                      : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
                     : "cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-300 line-through"
               }`}
             >
@@ -435,11 +461,13 @@ function BookingForm({
   date,
   time,
   onBack,
+  theme = "blue",
 }: {
   serviceId: string;
   date: string;
   time: string;
   onBack: () => void;
+  theme?: "blue" | "mono";
 }) {
   const { t, locale } = useI18n();
   const [state, formAction, isPending] = useActionState(createBookingAction, {
@@ -452,7 +480,7 @@ function BookingForm({
   const activeLocale = locale === "id" ? idLocale : enUS;
 
   if (state.success && state.summary) {
-    return <BookingSuccess summary={state.summary} />;
+    return <BookingSuccess summary={state.summary} theme={theme} />;
   }
 
   return (
@@ -475,9 +503,11 @@ function BookingForm({
         {t("booking.detailsSubtitle")}
       </p>
 
-      <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-        <p className="text-xs font-medium text-blue-600">{t("booking.selectedSlot")}</p>
-        <p className="text-sm font-semibold text-blue-900">
+      <div className={`mb-4 rounded-xl border px-4 py-3 ${
+        theme === "mono" ? "border-slate-200 bg-slate-50" : "border-blue-100 bg-blue-50"
+      }`}>
+        <p className={`text-xs font-medium ${theme === "mono" ? "text-slate-600" : "text-blue-600"}`}>{t("booking.selectedSlot")}</p>
+        <p className={`text-sm font-semibold ${theme === "mono" ? "text-slate-900" : "text-blue-900"}`}>
           {format(new Date(date), "EEEE, d MMMM yyyy", { locale: activeLocale })} — {time}
         </p>
       </div>
@@ -503,7 +533,11 @@ function BookingForm({
             type="text"
             required
             placeholder={t("booking.fullNamePlaceholder")}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all ${
+              theme === "mono"
+                ? "focus:border-slate-800 focus:ring-2 focus:ring-slate-100"
+                : "focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            }`}
           />
         </div>
 
@@ -517,7 +551,11 @@ function BookingForm({
             type="tel"
             required
             placeholder={t("booking.whatsappPlaceholder")}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all ${
+              theme === "mono"
+                ? "focus:border-slate-800 focus:ring-2 focus:ring-slate-100"
+                : "focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            }`}
           />
         </div>
 
@@ -530,14 +568,22 @@ function BookingForm({
             name="patientNotes"
             rows={3}
             placeholder={t("booking.notesPlaceholder")}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none"
+            className={`w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all resize-none ${
+              theme === "mono"
+                ? "focus:border-slate-800 focus:ring-2 focus:ring-slate-100"
+                : "focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            }`}
           />
         </div>
 
         <button
           type="submit"
           disabled={isPending}
-          className="w-full rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+          className={`w-full rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60 ${
+            theme === "mono"
+              ? "bg-slate-900 hover:bg-black shadow-lg shadow-slate-950/10"
+              : "bg-linear-to-r from-blue-600 to-cyan-500 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:brightness-110"
+          }`}
         >
           {isPending ? (
             <span className="flex items-center justify-center gap-2">
@@ -561,6 +607,7 @@ function BookingForm({
 // ============================================================
 function BookingSuccess({
   summary,
+  theme = "blue",
 }: {
   summary: {
     serviceName: string;
@@ -571,6 +618,7 @@ function BookingSuccess({
     totalPrice?: number;
     manageUrl?: string;
   };
+  theme?: "blue" | "mono";
 }) {
   const { t, locale } = useI18n();
   const needsPayment = !!summary.paymentUrl && (summary.totalPrice ?? 0) > 0;
@@ -636,7 +684,11 @@ function BookingSuccess({
       {needsPayment && (
         <a
           href={summary.paymentUrl}
-          className="mt-6 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-teal-500 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+          className={`mt-6 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-bold text-white transition-all active:scale-[0.98] ${
+            theme === "mono"
+              ? "bg-slate-900 hover:bg-black shadow-lg shadow-slate-950/10"
+              : "bg-linear-to-r from-emerald-600 to-teal-500 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:brightness-110"
+          }`}
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
@@ -646,8 +698,12 @@ function BookingSuccess({
       )}
 
       {!needsPayment && (
-        <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-          <p className="text-xs text-blue-600">
+        <div className={`mt-6 rounded-xl border px-4 py-3 ${
+          theme === "mono"
+            ? "border-slate-200 bg-slate-50"
+            : "border-blue-100 bg-blue-50"
+        }`}>
+          <p className={`text-xs ${theme === "mono" ? "text-slate-600" : "text-blue-600"}`}>
             {t("booking.pendingConfirmationNotes")}
           </p>
         </div>
@@ -658,7 +714,11 @@ function BookingSuccess({
         <div className="mx-auto mt-5 max-w-sm">
           <a
              href={summary.manageUrl}
-             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-500 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+             className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-bold text-white transition-all active:scale-[0.98] ${
+               theme === "mono"
+                 ? "bg-slate-900 hover:bg-black shadow-lg shadow-slate-950/10"
+                 : "bg-linear-to-r from-indigo-600 to-purple-500 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:brightness-110"
+             }`}
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
@@ -685,7 +745,19 @@ function BookingSuccess({
 // ============================================================
 // Main Booking Wizard (Orchestrator)
 // ============================================================
-export function BookingWizard({ providers }: { providers: Provider[] }) {
+export function BookingWizard({
+  providers,
+  orgName,
+  logoUrl,
+  theme = "blue",
+  embed = false,
+}: {
+  providers: Provider[];
+  orgName?: string;
+  logoUrl?: string | null;
+  theme?: "blue" | "mono";
+  embed?: boolean;
+}) {
   const { t } = useI18n();
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -761,39 +833,53 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
     : [t("booking.steps.service"), t("booking.steps.date"), t("booking.steps.time"), t("booking.steps.details")];
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className={`flex flex-col ${embed ? "bg-white" : "min-h-screen bg-slate-50"}`}>
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-600 to-cyan-500">
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-              </svg>
+      {!embed && (
+        <header className="border-b border-slate-200 bg-white">
+          <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
+            <div className="flex items-center gap-2">
+              {logoUrl ? (
+                <img src={logoUrl} alt={orgName || appName} className="h-8 w-8 rounded-lg object-cover" />
+              ) : (
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                  theme === "mono"
+                    ? "bg-slate-900"
+                    : "bg-linear-to-br from-blue-600 to-cyan-500"
+                }`}>
+                  <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                  </svg>
+                </div>
+              )}
+              <span className="text-lg font-bold text-slate-900">{orgName || appName}</span>
             </div>
-            <span className="text-lg font-bold text-slate-900">{appName}</span>
+            <a
+              href="/login"
+              className="text-xs text-slate-400 hover:text-slate-600"
+            >
+              {t("booking.adminLogin")}
+            </a>
           </div>
-          <a
-            href="/login"
-            className="text-xs text-slate-400 hover:text-slate-600"
-          >
-            {t("booking.adminLogin")}
-          </a>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Progress Steps */}
       <div className="border-b border-slate-100 bg-white">
-        <div className="mx-auto max-w-2xl px-4 py-3">
+        <div className={`mx-auto max-w-2xl ${embed ? "px-0 py-2" : "px-4 py-3"}`}>
           <div className="flex items-center gap-2 text-xs">
             {stepLabels.map((step, i) => (
               <div key={step} className="flex items-center gap-2">
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
                     i < currentStep
-                      ? "bg-blue-600 text-white"
+                      ? theme === "mono"
+                        ? "bg-slate-900 text-white"
+                        : "bg-blue-600 text-white"
                       : i === currentStep
-                        ? "border-2 border-blue-600 text-blue-600"
+                        ? theme === "mono"
+                          ? "border-2 border-slate-900 text-slate-900"
+                          : "border-2 border-blue-600 text-blue-600"
                         : "border border-slate-200 text-slate-400"
                   }`}
                 >
@@ -803,7 +889,13 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
                   {step}
                 </span>
                 {i < stepLabels.length - 1 && (
-                  <div className={`h-px w-6 sm:w-10 ${i < currentStep ? "bg-blue-500" : "bg-slate-200"}`} />
+                  <div className={`h-px w-6 sm:w-10 ${
+                    i < currentStep
+                      ? theme === "mono"
+                        ? "bg-slate-900"
+                        : "bg-blue-500"
+                      : "bg-slate-200"
+                  }`} />
                 )}
               </div>
             ))}
@@ -812,12 +904,13 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">
+      <main className={`mx-auto w-full max-w-2xl flex-1 ${embed ? "px-0 py-2" : "px-4 py-6"}`}>
         {showForm && selectedService && selectedDate && selectedTime ? (
           <BookingForm
             serviceId={selectedService}
             date={format(selectedDate, "yyyy-MM-dd")}
             time={selectedTime}
+            theme={theme}
             onBack={() => setShowForm(false)}
           />
         ) : (
@@ -826,6 +919,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
             <ProviderSelector
               providers={providers}
               selected={selectedProvider}
+              theme={theme}
               onSelect={(id) => {
                 if (id !== selectedProvider) {
                   setSelectedProvider(id);
@@ -839,6 +933,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
                 services={services}
                 selected={selectedService}
                 loading={loadingServices}
+                theme={theme}
                 onSelect={(id) => {
                   setSelectedService(id);
                   setSelectedDate(null);
@@ -852,6 +947,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
             {selectedService && (
               <CalendarPicker
                 selectedDate={selectedDate}
+                theme={theme}
                 onSelect={(date) => {
                   setSelectedDate(date);
                   setSelectedTime(null);
@@ -871,6 +967,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
                 <SlotPicker
                   slots={slots}
                   selected={selectedTime}
+                  theme={theme}
                   onSelect={setSelectedTime}
                   loading={loadingSlots}
                 />
@@ -882,7 +979,11 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
               <button
                 type="button"
                 onClick={() => setShowForm(true)}
-                className="w-full rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+                className={`w-full rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all active:scale-[0.98] ${
+                  theme === "mono"
+                    ? "bg-slate-900 hover:bg-black shadow-lg shadow-slate-950/10"
+                    : "bg-linear-to-r from-blue-600 to-cyan-500 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:brightness-110"
+                }`}
               >
                 {t("booking.continueToDetails")}
               </button>
@@ -892,11 +993,13 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-100 bg-white py-4 text-center">
-        <p className="text-xs text-slate-400">
-          {t("booking.poweredBy", { appName })}
-        </p>
-      </footer>
+      {!embed && (
+        <footer className="border-t border-slate-100 bg-white py-4 text-center">
+          <p className="text-xs text-slate-400">
+            {t("booking.poweredBy", { appName })}
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

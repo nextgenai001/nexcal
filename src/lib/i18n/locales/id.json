@@ -113,10 +113,28 @@
       "services": "Layanan",
       "schedule": "Jadwal",
       "bookings": "Reservasi",
+      "embed": "UI Sematan",
       "settings": "Pengaturan",
       "staff": "Tim Staf",
       "logout": "Keluar",
       "adminPanel": "Admin Panel"
+    },
+    "embed": {
+      "title": "Generator Widget Sematan (Embed)",
+      "subtitle": "Atur dan pratinjau tampilan NexCal saat disematkan di situs web lain.",
+      "themeLabel": "Tema Visual",
+      "themeBlue": "Sleek Blue (Default)",
+      "themeMono": "Monokrom Profesional (Hitam & Putih)",
+      "embedModeLabel": "Pengaturan Mode Sematan",
+      "embedModeDesc": "Menyembunyikan header/footer halaman dan menggunakan latar transparan agar menyatu dengan situs Anda.",
+      "copySnippet": "Salin Kode Sematan",
+      "snippetCopied": "Tersalin ke papan klip!",
+      "snippetInstructions": "Salin dan tempel cuplikan kode HTML ini ke pembuat situs web Anda (WordPress, Webflow, HTML kustom) untuk mengintegrasikan kalender jadwal.",
+      "livePreview": "Pratinjau Langsung Interaktif",
+      "noOrgError": "Anda harus terhubung dengan organisasi yang memiliki slug URL valid untuk menggunakan fitur sematan.",
+      "previewWidth": "Lebar Kontainer Pratinjau",
+      "previewHeight": "Tinggi Kontainer Pratinjau",
+      "viewExternal": "Buka halaman reservasi langsung"
     },
     "dashboard": {
       "welcome": "Selamat Datang, {name} 👋",

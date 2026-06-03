@@ -1,26 +1,35 @@
+version: '3.8'
+
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: booking-db
-    restart: unless-stopped
+  app:
+    build: .
     ports:
-      - "5434:5432"
+      - "3000:3000"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-booking_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:-booking_db}
+      # Database connection string pointing to the postgres container inside the network
+      - DATABASE_URL=postgresql://postgres:postgres_password@db:5432/booking_db?schema=public
+      - NEXTAUTH_URL=https://yourdomain.com
+      - AUTH_SECRET=your_nextauth_secret_here
+      - N8N_WEBHOOK_URL=http://your-n8n-url/webhook/booking-handler
+      - NEXT_PUBLIC_APP_NAME=NexCal
+      - NEXT_PUBLIC_APP_URL=https://yourdomain.com
+      - NEXT_TELEMETRY_DISABLED=1
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:15-alpine
+    container_name: booking-db-prod
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_password
+      - POSTGRES_DB=booking_db
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-booking_admin} -d ${POSTGRES_DB:-booking_db}",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - pgdata:/var/lib/postgresql/data
+    restart: always
 
 volumes:
-  postgres_data:
-    driver: local
+  pgdata:

@@ -11,9 +11,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { getAvailableSlots, ScheduleSession, DateOverrideData, ExistingBooking } from "@/lib/slots";
-import { parse, startOfDay, addMinutes } from "date-fns";
+import { parse, startOfDay, addMinutes, format } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { getTranslator } from "@/lib/i18n/server";
+import { triggerWebhook } from "@/lib/webhooks";
 
 // ============================================================
 // Types
@@ -47,6 +48,7 @@ export interface ManagedBooking {
     name: string;
     clinicName: string | null;
     phone: string | null;
+    organization?: { slug: string } | null;
   };
 }
 
@@ -81,7 +83,12 @@ export async function getBookingByToken(token: string): Promise<ManagedBooking |
         select: { name: true, duration: true, color: true, isVirtual: true },
       },
       user: {
-        select: { name: true, clinicName: true, phone: true },
+        select: {
+          name: true,
+          clinicName: true,
+          phone: true,
+          organization: { select: { slug: true } },
+        },
       },
     },
   });
@@ -139,6 +146,26 @@ export async function cancelBookingByPatient(
     data: {
       status: "CANCELLED",
       cancelReason: t("portal.cancelledByPatientReason"),
+    },
+  });
+
+  // Trigger Webhook for n8n/Automation
+  triggerWebhook("booking.cancelled", {
+    orgSlug: booking.user.organization?.slug || null,
+    booking: {
+      id: booking.id,
+      patientName: booking.patientName,
+      patientPhone: booking.patientPhone,
+      serviceName: booking.serviceType.name,
+      date: format(booking.date, "yyyy-MM-dd"),
+      startTime: format(booking.startTime, "HH:mm"),
+      endTime: format(booking.endTime, "HH:mm"),
+      status: "CANCELLED",
+      cancelReason: t("portal.cancelledByPatientReason"),
+      totalPrice: booking.totalPrice,
+      paymentStatus: booking.paymentStatus,
+      manageUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/booking/manage/${token}`,
+      providerName: booking.user.clinicName || "",
     },
   });
 
@@ -238,6 +265,30 @@ export async function rescheduleBookingByPatient(
         startTime: slotStart,
         endTime: slotEnd,
         rescheduleCount: { increment: 1 },
+      },
+    });
+
+    // Trigger Webhook for n8n/Automation
+    triggerWebhook("booking.rescheduled", {
+      orgSlug: booking.user.organization?.slug || null,
+      booking: {
+        id: booking.id,
+        patientName: booking.patientName,
+        patientPhone: booking.patientPhone,
+        serviceName: booking.serviceType.name,
+        date: newDate,
+        startTime: newTime,
+        endTime: format(slotEnd, "HH:mm"),
+        status: booking.status,
+        totalPrice: booking.totalPrice,
+        paymentStatus: booking.paymentStatus,
+        manageUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/booking/manage/${token}`,
+        providerName: booking.user.clinicName || "",
+        previousSchedule: {
+          date: format(booking.date, "yyyy-MM-dd"),
+          startTime: format(booking.startTime, "HH:mm"),
+          endTime: format(booking.endTime, "HH:mm"),
+        }
       },
     });
   } catch {

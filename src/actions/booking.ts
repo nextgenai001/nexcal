@@ -7,6 +7,7 @@ import { parse, startOfDay, addMinutes, format } from "date-fns";
 import { notifyBookingReceived } from "@/lib/whatsapp";
 import { getPaymentProvider, isPaymentEnabled, calculatePaymentAmount } from "@/lib/payment/core";
 import { getTranslator } from "@/lib/i18n/server";
+import { triggerWebhook } from "@/lib/webhooks";
 
 // ============================================================
 // Server Action: createBooking
@@ -88,7 +89,11 @@ export async function createBookingAction(
     // Ambil nama klinik/bisnis dan orgId dari pemilik
     const owner = await prisma.user.findUnique({
       where: { id: service.userId },
-      select: { clinicName: true, organizationId: true },
+      select: {
+        clinicName: true,
+        organizationId: true,
+        organization: { select: { slug: true } },
+      },
     });
 
     // Hitung waktu mulai dan selesai
@@ -231,6 +236,26 @@ export async function createBookingAction(
         duration: service.duration,
         clinicName: owner?.clinicName || undefined,
         manageUrl,
+      });
+
+      // Trigger Webhook for n8n/Automation
+      triggerWebhook("booking.created", {
+        orgSlug: owner?.organization?.slug || null,
+        booking: {
+          id: booking.id,
+          patientName,
+          patientPhone,
+          serviceName: service.name,
+          date,
+          startTime,
+          endTime: format(slotEnd, "HH:mm"),
+          status: booking.status,
+          totalPrice: booking.totalPrice,
+          dpAmount: booking.dpAmount,
+          paymentStatus: booking.paymentStatus,
+          manageUrl,
+          providerName: owner?.clinicName || "",
+        },
       });
 
       return {
