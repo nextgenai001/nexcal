@@ -2,16 +2,18 @@
 
 import { useActionState } from "react";
 import { saveMultiwaSettings, saveGcalSettings, saveMidtransSettings } from "@/actions/settings";
+import { useI18n } from "@/lib/i18n/provider";
 
 // ============================================================
 // Feedback Banner
 // ============================================================
 
 function Feedback({ state }: { state: { error: string | null; success: boolean } }) {
+  const { t } = useI18n();
   if (state.success) {
     return (
       <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">
-        ✅ Pengaturan berhasil disimpan!
+        ✅ {t("admin.settings.settingsSaved")}
       </div>
     );
   }
@@ -36,6 +38,7 @@ interface MultiwaData {
 }
 
 export function MultiwaSettingsForm({ data }: { data: MultiwaData }) {
+  const { t } = useI18n();
   const [state, formAction, isPending] = useActionState(saveMultiwaSettings, {
     error: null,
     success: false,
@@ -50,8 +53,8 @@ export function MultiwaSettingsForm({ data }: { data: MultiwaData }) {
           </svg>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">WhatsApp (MultiWA)</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Konfigurasi gateway notifikasi WhatsApp</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white">{t("admin.settings.multiwaTitle")}</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t("admin.settings.multiwaSubtitle")}</p>
         </div>
       </div>
 
@@ -59,21 +62,21 @@ export function MultiwaSettingsForm({ data }: { data: MultiwaData }) {
 
       <form action={formAction} className="space-y-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">API URL</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.apiUrl")}</label>
           <input name="multiwaUrl" type="url" defaultValue={data.multiwaUrl || ""}
             placeholder="https://wa.example.com"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">API Key</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.apiKey")}</label>
           <input name="multiwaApiKey" type="password" defaultValue={data.multiwaApiKey || ""}
             placeholder="Your API Key"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Session ID</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.sessionId")}</label>
           <input name="multiwaSessionId" type="text" defaultValue={data.multiwaSessionId || ""}
             placeholder="default"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -82,7 +85,7 @@ export function MultiwaSettingsForm({ data }: { data: MultiwaData }) {
         <button type="submit" disabled={isPending}
           className="w-full rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
         >
-          {isPending ? "Menyimpan..." : "💾 Simpan Pengaturan WhatsApp"}
+          {isPending ? t("common.saving") : `💾 ${t("admin.settings.saveWhatsapp")}`}
         </button>
       </form>
     </div>
@@ -99,6 +102,7 @@ interface GcalData {
 }
 
 export function GcalSettingsForm({ data }: { data: GcalData }) {
+  const { t } = useI18n();
   const [state, formAction, isPending] = useActionState(saveGcalSettings, {
     error: null,
     success: false,
@@ -113,8 +117,8 @@ export function GcalSettingsForm({ data }: { data: GcalData }) {
           </svg>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">Google Calendar</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Kredensial OAuth untuk sinkronisasi kalender</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white">{t("admin.settings.gcalTitle")}</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t("admin.settings.gcalSubtitle")}</p>
         </div>
       </div>
 
@@ -122,14 +126,14 @@ export function GcalSettingsForm({ data }: { data: GcalData }) {
 
       <form action={formAction} className="space-y-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Client ID</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.clientId")}</label>
           <input name="gcalClientId" type="text" defaultValue={data.gcalClientId || ""}
             placeholder="xxxx.apps.googleusercontent.com"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Client Secret</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.clientSecret")}</label>
           <input name="gcalClientSecret" type="password" defaultValue={data.gcalClientSecret || ""}
             placeholder="GOCSPX-xxxx"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -138,7 +142,7 @@ export function GcalSettingsForm({ data }: { data: GcalData }) {
         <button type="submit" disabled={isPending}
           className="w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          {isPending ? "Menyimpan..." : "💾 Simpan Pengaturan Google Calendar"}
+          {isPending ? t("common.saving") : `💾 ${t("admin.settings.saveGcal")}`}
         </button>
       </form>
     </div>
@@ -156,6 +160,7 @@ interface MidtransData {
 }
 
 export function MidtransSettingsForm({ data }: { data: MidtransData }) {
+  const { t } = useI18n();
   const [state, formAction, isPending] = useActionState(saveMidtransSettings, {
     error: null,
     success: false,
@@ -170,8 +175,8 @@ export function MidtransSettingsForm({ data }: { data: MidtransData }) {
           </svg>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">Payment Gateway (Midtrans)</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Konfigurasi pembayaran online via Midtrans Snap</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white">{t("admin.settings.midtransTitle")}</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t("admin.settings.midtransSubtitle")}</p>
         </div>
       </div>
 
@@ -179,14 +184,14 @@ export function MidtransSettingsForm({ data }: { data: MidtransData }) {
 
       <form action={formAction} className="space-y-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Server Key</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.serverKey")}</label>
           <input name="midtransServerKey" type="password" defaultValue={data.midtransServerKey || ""}
             placeholder="SB-Mid-server-xxxx atau Mid-server-xxxx"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Client Key</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.clientKey")}</label>
           <input name="midtransClientKey" type="password" defaultValue={data.midtransClientKey || ""}
             placeholder="SB-Mid-client-xxxx atau Mid-client-xxxx"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -194,9 +199,9 @@ export function MidtransSettingsForm({ data }: { data: MidtransData }) {
         </div>
         <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
           <div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Mode Produksi</p>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("admin.settings.productionMode")}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {data.midtransIsProd ? "🟢 Aktif — Transaksi uang sungguhan" : "🟡 Sandbox — Mode pengujian"}
+              {data.midtransIsProd ? t("admin.settings.productionActive") : t("admin.settings.sandboxTesting")}
             </p>
           </div>
           <label className="relative inline-flex cursor-pointer items-center">
@@ -209,7 +214,7 @@ export function MidtransSettingsForm({ data }: { data: MidtransData }) {
         <button type="submit" disabled={isPending}
           className="w-full rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
         >
-          {isPending ? "Menyimpan..." : "💾 Simpan Pengaturan Midtrans"}
+          {isPending ? t("common.saving") : `💾 ${t("admin.settings.saveMidtrans")}`}
         </button>
       </form>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useI18n } from "@/lib/i18n/provider";
 
 export default function RootError({
   error,
@@ -9,6 +10,8 @@ export default function RootError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useI18n();
+
   useEffect(() => {
     console.error("[RootError]", error);
   }, [error]);
@@ -32,16 +35,16 @@ export default function RootError({
           </svg>
         </div>
         <h2 className="mb-2 text-xl font-bold text-slate-900 dark:text-white">
-          Oops! Ada Masalah
+          {t("common.errorPage.title")}
         </h2>
         <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-          Terjadi kesalahan yang tidak terduga. Silakan muat ulang halaman ini.
+          {t("common.errorPage.subtitle")}
         </p>
         <button
           onClick={reset}
           className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md active:scale-95"
         >
-          Muat Ulang
+          {t("common.errorPage.reload")}
         </button>
       </div>
     </div>

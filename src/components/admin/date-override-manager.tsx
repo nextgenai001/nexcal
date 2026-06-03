@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 import { createDateOverrideAction, deleteDateOverrideAction } from "@/actions/date-override";
 import { format } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
+import { id as localeId, enUS } from "date-fns/locale";
+import { useI18n } from "@/lib/i18n/provider";
 
 interface Override {
   id: string;
@@ -19,6 +20,9 @@ export function DateOverrideManager({
 }: {
   overrides: Override[];
 }) {
+  const { t, locale } = useI18n();
+  const activeLocale = locale === "id" ? localeId : enUS;
+
   const [state, formAction, isPending] = useActionState(
     createDateOverrideAction,
     { error: null, success: false }
@@ -31,7 +35,7 @@ export function DateOverrideManager({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="date" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Tanggal
+              {t("common.date")}
             </label>
             <input
               id="date"
@@ -43,13 +47,13 @@ export function DateOverrideManager({
           </div>
           <div>
             <label htmlFor="reason" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Keterangan
+              {t("admin.schedule.reasonLabel")}
             </label>
             <input
               id="reason"
               name="reason"
               type="text"
-              placeholder="Contoh: Hari Raya Idul Fitri"
+              placeholder={t("admin.schedule.reasonPlaceholder")}
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
@@ -58,18 +62,18 @@ export function DateOverrideManager({
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input type="radio" name="isBlocked" value="true" defaultChecked className="text-blue-600" />
-            Tutup (Libur penuh)
+            {t("admin.schedule.fullDayOff")}
           </label>
           <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
             <input type="radio" name="isBlocked" value="false" className="text-blue-600" />
-            Jam Khusus
+            {t("admin.schedule.specificHours")}
           </label>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="startTime" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Jam Mulai (jika jam khusus)
+              {t("admin.schedule.startTime")}
             </label>
             <input
               id="startTime"
@@ -80,7 +84,7 @@ export function DateOverrideManager({
           </div>
           <div>
             <label htmlFor="endTime" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Jam Selesai (jika jam khusus)
+              {t("admin.schedule.endTime")}
             </label>
             <input
               id="endTime"
@@ -95,7 +99,7 @@ export function DateOverrideManager({
           <p className="text-sm text-red-600 dark:text-red-400">❌ {state.error}</p>
         )}
         {state.success && (
-          <p className="text-sm text-green-600 dark:text-green-400">✅ Override berhasil disimpan!</p>
+          <p className="text-sm text-green-600 dark:text-green-400">✅ {t("admin.schedule.overrideSaved")}</p>
         )}
 
         <button
@@ -103,7 +107,7 @@ export function DateOverrideManager({
           disabled={isPending}
           className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
         >
-          {isPending ? "Menyimpan..." : "+ Tambah Override"}
+          {isPending ? t("admin.schedule.saving") : t("admin.schedule.addOverride")}
         </button>
       </form>
 
@@ -111,7 +115,7 @@ export function DateOverrideManager({
       {overrides.length > 0 && (
         <div className="mt-6 space-y-2">
           <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Override Terdaftar
+            {t("admin.schedule.activeOverrides")}
           </h4>
           {overrides.map((o) => (
             <div
@@ -130,12 +134,12 @@ export function DateOverrideManager({
                 </span>
                 <div>
                   <p className="text-sm font-medium text-slate-900 dark:text-white">
-                    {format(new Date(o.date), "EEEE, d MMMM yyyy", { locale: idLocale })}
+                    {format(new Date(o.date), "EEEE, d MMMM yyyy", { locale: activeLocale })}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {o.isBlocked
-                      ? "Libur penuh"
-                      : `Jam khusus: ${o.startTime} — ${o.endTime}`}
+                      ? t("admin.schedule.fullDayOffBadge")
+                      : t("admin.schedule.specificHoursBadge", { start: o.startTime || "", end: o.endTime || "" })}
                     {o.reason && ` · ${o.reason}`}
                   </p>
                 </div>

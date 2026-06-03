@@ -16,7 +16,7 @@ async function main() {
     where: { slug: "klinik-sehat-utama" },
     update: {},
     create: {
-      name: "Klinik Sehat Utama",
+      name: "Healthy Life Clinic",
       slug: "klinik-sehat-utama",
     },
   });
@@ -34,10 +34,10 @@ async function main() {
     create: {
       email: "admin@kliniku.com",
       hashedPassword,
-      name: "Admin Utama",
+      name: "Main Admin",
       role: "OWNER",
-      clinicName: "Klinik Sehat Utama",
-      clinicAddress: "Jl. Kesehatan No. 1, Batam",
+      clinicName: "Healthy Life Clinic",
+      clinicAddress: "1st Health Road, Batam",
       phone: "08121234567",
       organizationId: org.id,
     },
@@ -52,7 +52,7 @@ async function main() {
       hashedPassword,
       name: "Dr. Budi Santoso",
       role: "STAFF",
-      clinicName: "Klinik Sehat Utama",
+      clinicName: "Healthy Life Clinic",
       phone: "08129876543",
       organizationId: org.id,
     },
@@ -65,9 +65,9 @@ async function main() {
     create: {
       email: "bidan.sari@kliniku.com",
       hashedPassword,
-      name: "Bidan Sari Dewi",
+      name: "Midwife Sari Dewi",
       role: "STAFF",
-      clinicName: "Klinik Sehat Utama",
+      clinicName: "Healthy Life Clinic",
       phone: "08131234567",
       organizationId: org.id,
     },
@@ -84,12 +84,12 @@ async function main() {
     update: {},
     create: {
       id: "svc-konsultasi-umum",
-      name: "Konsultasi Umum",
+      name: "General Consultation",
       duration: 30,
       bufferTime: 10,
       price: 75000,
       dpPercentage: 0,
-      description: "Pemeriksaan dan konsultasi kesehatan umum.",
+      description: "General health check-up and consultation.",
       color: "#3B82F6",
       userId: drBudi.id,
     },
@@ -105,7 +105,7 @@ async function main() {
       bufferTime: 15,
       price: 350000,
       dpPercentage: 50,
-      description: "Pemeriksaan kesehatan menyeluruh dengan laporan hasil.",
+      description: "Comprehensive health examination with details report.",
       color: "#8B5CF6",
       userId: drBudi.id,
     },
@@ -119,12 +119,12 @@ async function main() {
     update: {},
     create: {
       id: "svc-kehamilan",
-      name: "Pemeriksaan Kehamilan",
+      name: "Pregnancy Check-up",
       duration: 30,
       bufferTime: 10,
       price: 150000,
       dpPercentage: 0,
-      description: "Pemeriksaan rutin kehamilan (ANC) termasuk USG dasar.",
+      description: "Routine prenatal care including basic ultrasound.",
       color: "#EC4899",
       userId: bidanSari.id,
     },
@@ -135,12 +135,12 @@ async function main() {
     update: {},
     create: {
       id: "svc-imunisasi",
-      name: "Imunisasi Anak",
+      name: "Child Immunization",
       duration: 15,
       bufferTime: 5,
       price: 0,
       dpPercentage: 0,
-      description: "Imunisasi dasar dan lanjutan untuk bayi dan balita.",
+      description: "Basic and booster immunizations for infants and toddlers.",
       color: "#10B981",
       userId: bidanSari.id,
     },
@@ -151,19 +151,19 @@ async function main() {
     update: {},
     create: {
       id: "svc-laktasi",
-      name: "Konsultasi Laktasi",
+      name: "Lactation Consultation",
       duration: 45,
       bufferTime: 10,
       price: 100000,
       dpPercentage: 0,
-      description: "Konsultasi menyusui dan manajemen ASI.",
+      description: "Breastfeeding consultation and breast milk management.",
       color: "#F59E0B",
       userId: bidanSari.id,
     },
   });
 
   console.log(
-    `✅ Bidan Sari services: ${pemeriksaanKehamilan.name}, ${imunisasi.name}, ${konsultasiLaktasi.name}`
+    `✅ Midwife Sari services: ${pemeriksaanKehamilan.name}, ${imunisasi.name}, ${konsultasiLaktasi.name}`
   );
 
   // ============================================================
@@ -190,7 +190,7 @@ async function main() {
       data: { userId: owner.id, ...s },
     });
   }
-  console.log(`✅ Admin Utama schedules: Senin-Jumat (Pagi + Sore)`);
+  console.log(`✅ Main Admin schedules: Monday-Friday (Morning + Afternoon)`);
 
   // Dr. Budi: Senin-Jumat, 08:00-12:00 (Pagi) & 14:00-17:00 (Sore)
   const budiSchedules = [
@@ -213,7 +213,7 @@ async function main() {
       data: { userId: drBudi.id, ...s },
     });
   }
-  console.log(`✅ Dr. Budi schedules: Senin-Jumat (Pagi + Sore)`);
+  console.log(`✅ Dr. Budi schedules: Monday-Friday (Morning + Afternoon)`);
 
   // Bidan Sari: Senin-Sabtu, 09:00-15:00
   const sariSchedules = [
@@ -231,7 +231,7 @@ async function main() {
       data: { userId: bidanSari.id, ...s },
     });
   }
-  console.log(`✅ Bidan Sari schedules: Senin-Sabtu (09:00-15:00/13:00)`);
+  console.log(`✅ Midwife Sari schedules: Monday-Saturday (09:00-15:00/13:00)`);
 
   // ============================================================
   // 5. Sample Bookings
@@ -260,7 +260,7 @@ async function main() {
       endTime: budiBooking1End,
       patientName: "Ahmad Fauzi",
       patientPhone: "081234567890",
-      patientNotes: "Keluhan batuk berkepanjangan",
+      patientNotes: "Persistent cough symptoms",
       status: "CONFIRMED",
     },
   });
@@ -306,7 +306,7 @@ async function main() {
       endTime: sariBooking1End,
       patientName: "Dewi Lestari",
       patientPhone: "083456789012",
-      patientNotes: "Kehamilan 7 bulan, pemeriksaan rutin",
+      patientNotes: "7 months pregnant, routine check-up",
       status: "CONFIRMED",
     },
   });
@@ -328,12 +328,12 @@ async function main() {
       endTime: sariBooking2End,
       patientName: "Putri Rahayu",
       patientPhone: "084567890123",
-      patientNotes: "Imunisasi DPT lanjutan untuk bayi usia 6 bulan",
+      patientNotes: "Booster DPT immunization for 6-month-old infant",
       status: "PENDING",
     },
   });
 
-  console.log(`✅ Bidan Sari bookings: 2 (1 CONFIRMED, 1 PENDING)`);
+  console.log(`✅ Midwife Sari bookings: 2 (1 CONFIRMED, 1 PENDING)`);
 
   // ============================================================
   // 6. Historical Bookings (30 days) — for Dashboard Charts

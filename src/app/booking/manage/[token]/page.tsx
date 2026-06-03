@@ -1,20 +1,30 @@
 import { notFound } from "next/navigation";
 import { getBookingByToken, type ManagedBooking } from "@/actions/booking-manage";
 import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { id as localeId, enUS } from "date-fns/locale";
 import PatientPortalClient from "./client";
+import { getTranslator } from "@/lib/i18n/server";
 
 // Force dynamic rendering (token is unique per request)
 export const dynamic = "force-dynamic";
 
-function canModifyBooking(booking: ManagedBooking): {
+function formatCurrency(amount: number, locale: string) {
+  return new Intl.NumberFormat(locale === "id" ? "id-ID" : "en-US", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function canModifyBooking(booking: ManagedBooking, t: (key: string, params?: Record<string, string | number>) => string): {
   canCancel: boolean;
   canReschedule: boolean;
   reason?: string;
 } {
   const isActive = ["PENDING", "CONFIRMED"].includes(booking.status);
   if (!isActive) {
-    return { canCancel: false, canReschedule: false, reason: "Booking sudah tidak aktif." };
+    return { canCancel: false, canReschedule: false, reason: t("portal.inactiveBooking") };
   }
   const now = new Date();
   const hoursUntilStart = (new Date(booking.startTime).getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -22,14 +32,14 @@ function canModifyBooking(booking: ManagedBooking): {
     return {
       canCancel: false,
       canReschedule: false,
-      reason: "🔒 Tombol Ubah/Batal dinonaktifkan karena jadwal Anda kurang dari 24 jam dari sekarang. Silakan hubungi admin langsung via WhatsApp jika ada keadaan darurat.",
+      reason: t("portal.warning24h"),
     };
   }
   const canReschedule = booking.rescheduleCount < 1;
   return {
     canCancel: true,
     canReschedule,
-    reason: canReschedule ? undefined : "Batas perubahan jadwal telah habis. Silakan hubungi admin.",
+    reason: canReschedule ? undefined : `${t("portal.rescheduleLimitLine1")} ${t("portal.rescheduleLimitLine2")}`,
   };
 }
 
@@ -43,23 +53,25 @@ export default async function ManageBookingPage({
 
   if (!booking) notFound();
 
-  const modification = canModifyBooking(booking);
+  const { t, locale } = await getTranslator();
+
+  const modification = canModifyBooking(booking, t);
 
   const statusLabels: Record<string, { label: string; color: string; icon: string }> = {
-    PENDING: { label: "Menunggu Konfirmasi", color: "amber", icon: "⏳" },
-    CONFIRMED: { label: "Dikonfirmasi", color: "green", icon: "✅" },
-    COMPLETED: { label: "Selesai", color: "blue", icon: "🎉" },
-    CANCELLED: { label: "Dibatalkan", color: "red", icon: "❌" },
-    NO_SHOW: { label: "Tidak Hadir", color: "gray", icon: "👻" },
+    PENDING: { label: t("portal.statusPending"), color: "amber", icon: "⏳" },
+    CONFIRMED: { label: t("portal.statusConfirmed"), color: "green", icon: "✅" },
+    COMPLETED: { label: t("portal.statusCompleted"), color: "blue", icon: "🎉" },
+    CANCELLED: { label: t("portal.statusCancelled"), color: "red", icon: "❌" },
+    NO_SHOW: { label: t("portal.statusNoShow"), color: "gray", icon: "👻" },
   };
 
   const status = statusLabels[booking.status] || statusLabels.PENDING;
 
   const paymentLabels: Record<string, string> = {
-    PAID: "Lunas",
-    UNPAID: "Belum Bayar",
-    REFUNDED: "Dikembalikan",
-    FAILED: "Gagal",
+    PAID: t("portal.paymentPaid"),
+    UNPAID: t("portal.paymentUnpaid"),
+    REFUNDED: t("portal.paymentRefunded"),
+    FAILED: t("portal.paymentFailed"),
   };
 
   return (
@@ -70,7 +82,7 @@ export default async function ManageBookingPage({
           <h1 className="text-lg font-bold text-slate-900">
             {booking.user.clinicName || "NexCal"}
           </h1>
-          <p className="text-xs text-slate-500">Portal Pasien — Kelola Reservasi</p>
+          <p className="text-xs text-slate-500">{t("portal.patientPortalSubtitle")}</p>
         </div>
       </div>
 
@@ -90,39 +102,41 @@ export default async function ManageBookingPage({
           <div className="flex items-center gap-3">
             <span className="text-2xl">{status.icon}</span>
             <div>
-              <p className="text-sm font-medium text-slate-500">Status Reservasi</p>
+              <p className="text-sm font-medium text-slate-500">{t("portal.bookingStatus")}</p>
               <p className="text-lg font-bold text-slate-900">{status.label}</p>
             </div>
           </div>
           {booking.cancelReason && (
-            <p className="mt-2 text-sm text-red-600">Alasan: {booking.cancelReason}</p>
+            <p className="mt-2 text-sm text-red-600">
+              {t("portal.cancelReasonLabel", { reason: booking.cancelReason })}
+            </p>
           )}
         </div>
 
         {/* Booking Details */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Detail Reservasi
+            {t("portal.bookingDetails")}
           </h2>
 
           <div className="space-y-3">
             <DetailRow
-              label="Layanan"
+              label={t("common.service")}
               value={booking.serviceType.name}
-              badge={booking.serviceType.isVirtual ? "🎥 Online" : undefined}
+              badge={booking.serviceType.isVirtual ? t("portal.onlineBadge") : undefined}
             />
             <DetailRow
-              label="Tanggal"
-              value={format(new Date(booking.date), "EEEE, d MMMM yyyy", { locale: localeId })}
+              label={t("common.date")}
+              value={format(new Date(booking.date), "EEEE, d MMMM yyyy", { locale: locale === "id" ? localeId : enUS })}
             />
             <DetailRow
-              label="Waktu"
-              value={`${format(new Date(booking.startTime), "HH:mm")} — ${format(new Date(booking.endTime), "HH:mm")} (${booking.serviceType.duration} menit)`}
+              label={t("common.time")}
+              value={`${format(new Date(booking.startTime), "HH:mm")} — ${format(new Date(booking.endTime), "HH:mm")} (${t("portal.minutesCount", { count: booking.serviceType.duration })})`}
             />
-            <DetailRow label="Penyedia" value={booking.user.name} />
-            <DetailRow label="Pasien" value={booking.patientName} />
+            <DetailRow label={t("common.provider")} value={booking.user.name} />
+            <DetailRow label={t("common.patient")} value={booking.patientName} />
             {booking.patientNotes && (
-              <DetailRow label="Catatan" value={booking.patientNotes} />
+              <DetailRow label={t("common.notes")} value={booking.patientNotes} />
             )}
           </div>
         </div>
@@ -131,21 +145,21 @@ export default async function ManageBookingPage({
         {booking.totalPrice > 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-              Informasi Pembayaran
+              {t("portal.paymentInfo")}
             </h2>
             <div className="space-y-3">
               <DetailRow
-                label="Total"
-                value={`Rp ${booking.totalPrice.toLocaleString("id-ID")}`}
+                label={t("portal.total")}
+                value={formatCurrency(booking.totalPrice, locale)}
               />
               {booking.dpAmount > 0 && booking.dpAmount < booking.totalPrice && (
                 <DetailRow
-                  label="DP Dibayar"
-                  value={`Rp ${booking.dpAmount.toLocaleString("id-ID")}`}
+                  label={t("portal.dpPaid")}
+                  value={formatCurrency(booking.dpAmount, locale)}
                 />
               )}
               <DetailRow
-                label="Status Bayar"
+                label={t("portal.paymentStatusLabel")}
                 value={paymentLabels[booking.paymentStatus] || booking.paymentStatus}
               />
             </div>
@@ -161,12 +175,12 @@ export default async function ManageBookingPage({
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
                 </svg>
-                💳 Bayar Sekarang — Rp {booking.totalPrice.toLocaleString("id-ID")}
+                {t("portal.payNow", { amount: formatCurrency(booking.totalPrice, locale) })}
               </a>
             ) : booking.paymentStatus === "UNPAID" && !booking.paymentUrl ? (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
                 <p className="text-xs text-red-700">
-                  ⚠️ Tautan pembayaran gagal dibuat. Silakan hubungi admin untuk melakukan pembayaran langsung.
+                  ⚠️ {t("portal.paymentLinkError")}
                 </p>
               </div>
             ) : null}
@@ -183,17 +197,17 @@ export default async function ManageBookingPage({
           >
             <span className="text-2xl">🎥</span>
             <div>
-              <p className="text-sm font-semibold text-blue-900">Link Google Meet</p>
-              <p className="text-xs text-blue-600">Klik untuk bergabung ke konsultasi online</p>
+              <p className="text-sm font-semibold text-blue-900">{t("portal.googleMeetLink")}</p>
+              <p className="text-xs text-blue-600">{t("portal.joinOnlineConsultation")}</p>
             </div>
           </a>
         ) : booking.serviceType.isVirtual && ["PENDING", "CONFIRMED"].includes(booking.status) ? (
           <div className="flex items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
             <span className="text-2xl">💻</span>
             <div>
-              <p className="text-sm font-semibold text-indigo-900">Google Meet — Menunggu Konfirmasi</p>
+              <p className="text-sm font-semibold text-indigo-900">{t("portal.googleMeetAwaiting")}</p>
               <p className="text-xs text-indigo-600">
-                Tautan Google Meet sedang diproses. Tautan akan otomatis muncul di sini setelah admin mengkonfirmasi reservasi Anda.
+                {t("portal.googleMeetAwaitingNotes")}
               </p>
             </div>
           </div>
@@ -212,11 +226,11 @@ export default async function ManageBookingPage({
         {/* Footer */}
         <div className="pt-4 text-center">
           <p className="text-xs text-slate-400">
-            ID: {booking.id.slice(0, 8)}… · Dibuat {format(new Date(booking.createdAt), "d MMM yyyy HH:mm")}
+            ID: {booking.id.slice(0, 8)}… · {t("portal.createdDate", { date: format(new Date(booking.createdAt), "d MMM yyyy HH:mm", { locale: locale === "id" ? localeId : enUS }) })}
           </p>
           {booking.user.phone && (
             <p className="mt-1 text-xs text-slate-400">
-              Hubungi admin: {booking.user.phone}
+              {t("portal.contactAdmin", { phone: booking.user.phone })}
             </p>
           )}
         </div>

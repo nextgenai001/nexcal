@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getTranslator } from "@/lib/i18n/server";
 
 // ============================================================
 // Get Organization Settings
@@ -37,24 +38,19 @@ export async function getOrgSettings() {
 // Save MultiWA Settings
 // ============================================================
 
-const multiwaSchema = z.object({
-  multiwaUrl: z.string().url("URL tidak valid").or(z.literal("")),
-  multiwaApiKey: z.string(),
-  multiwaSessionId: z.string(),
-});
-
 export async function saveMultiwaSettings(
   _prevState: { error: string | null; success: boolean },
   formData: FormData
 ): Promise<{ error: string | null; success: boolean }> {
+  const { t } = await getTranslator();
   try {
     const session = await auth();
     if (!session?.user?.id || session.user.role !== "OWNER") {
-      return { error: "Unauthorized", success: false };
+      return { error: t("errors.unauthorized"), success: false };
     }
 
     const orgId = session.user.organizationId;
-    if (!orgId) return { error: "Organisasi tidak ditemukan.", success: false };
+    if (!orgId) return { error: t("errors.orgNotFound"), success: false };
 
     const raw = {
       multiwaUrl: (formData.get("multiwaUrl") as string) || "",
@@ -62,9 +58,15 @@ export async function saveMultiwaSettings(
       multiwaSessionId: (formData.get("multiwaSessionId") as string) || "",
     };
 
+    const multiwaSchema = z.object({
+      multiwaUrl: z.string().url(t("errors.invalidUrl")).or(z.literal("")),
+      multiwaApiKey: z.string(),
+      multiwaSessionId: z.string(),
+    });
+
     const parsed = multiwaSchema.safeParse(raw);
     if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Data tidak valid.", success: false };
+      return { error: parsed.error.issues[0]?.message || t("errors.invalidData"), success: false };
     }
 
     await prisma.organization.update({
@@ -79,7 +81,7 @@ export async function saveMultiwaSettings(
     revalidatePath("/admin/settings");
     return { error: null, success: true };
   } catch {
-    return { error: "Gagal menyimpan pengaturan MultiWA.", success: false };
+    return { error: t("errors.saveMultiwaFailed"), success: false };
   }
 }
 
@@ -96,14 +98,15 @@ export async function saveGcalSettings(
   _prevState: { error: string | null; success: boolean },
   formData: FormData
 ): Promise<{ error: string | null; success: boolean }> {
+  const { t } = await getTranslator();
   try {
     const session = await auth();
     if (!session?.user?.id || session.user.role !== "OWNER") {
-      return { error: "Unauthorized", success: false };
+      return { error: t("errors.unauthorized"), success: false };
     }
 
     const orgId = session.user.organizationId;
-    if (!orgId) return { error: "Organisasi tidak ditemukan.", success: false };
+    if (!orgId) return { error: t("errors.orgNotFound"), success: false };
 
     const raw = {
       gcalClientId: (formData.get("gcalClientId") as string) || "",
@@ -112,7 +115,7 @@ export async function saveGcalSettings(
 
     const parsed = gcalSchema.safeParse(raw);
     if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Data tidak valid.", success: false };
+      return { error: parsed.error.issues[0]?.message || t("errors.invalidData"), success: false };
     }
 
     await prisma.organization.update({
@@ -126,7 +129,7 @@ export async function saveGcalSettings(
     revalidatePath("/admin/settings");
     return { error: null, success: true };
   } catch {
-    return { error: "Gagal menyimpan pengaturan Google Calendar.", success: false };
+    return { error: t("errors.saveGcalFailed"), success: false };
   }
 }
 
@@ -144,14 +147,15 @@ export async function saveMidtransSettings(
   _prevState: { error: string | null; success: boolean },
   formData: FormData
 ): Promise<{ error: string | null; success: boolean }> {
+  const { t } = await getTranslator();
   try {
     const session = await auth();
     if (!session?.user?.id || session.user.role !== "OWNER") {
-      return { error: "Unauthorized", success: false };
+      return { error: t("errors.unauthorized"), success: false };
     }
 
     const orgId = session.user.organizationId;
-    if (!orgId) return { error: "Organisasi tidak ditemukan.", success: false };
+    if (!orgId) return { error: t("errors.orgNotFound"), success: false };
 
     const raw = {
       midtransServerKey: (formData.get("midtransServerKey") as string) || "",
@@ -161,7 +165,7 @@ export async function saveMidtransSettings(
 
     const parsed = midtransSchema.safeParse(raw);
     if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Data tidak valid.", success: false };
+      return { error: parsed.error.issues[0]?.message || t("errors.invalidData"), success: false };
     }
 
     await prisma.organization.update({
@@ -176,6 +180,6 @@ export async function saveMidtransSettings(
     revalidatePath("/admin/settings");
     return { error: null, success: true };
   } catch {
-    return { error: "Gagal menyimpan pengaturan Midtrans.", success: false };
+    return { error: t("errors.saveMidtransFailed"), success: false };
   }
 }

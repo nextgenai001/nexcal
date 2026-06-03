@@ -3,67 +3,79 @@
 import { useState, useTransition } from "react";
 import { updateBookingStatus, markAsPaidAction } from "@/actions/admin-bookings";
 import { format } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
+import { id as localeId, enUS } from "date-fns/locale";
+import { useI18n } from "@/lib/i18n/provider";
+
+function formatCurrency(amount: number, locale: string) {
+  return new Intl.NumberFormat(locale === "id" ? "id-ID" : "en-US", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 // ============================================================
 // Status Badge
 // ============================================================
 
-const statusMap: Record<string, { label: string; color: string }> = {
+const statusMap: Record<string, { labelKey: string; color: string }> = {
   PENDING: {
-    label: "Menunggu",
+    labelKey: "admin.bookings.pendingLabel",
     color: "bg-amber-100 text-amber-700 border-amber-200",
   },
   CONFIRMED: {
-    label: "Dikonfirmasi",
+    labelKey: "admin.bookings.confirmedLabel",
     color: "bg-green-100 text-green-700 border-green-200",
   },
   CANCELLED: {
-    label: "Dibatalkan",
+    labelKey: "admin.bookings.cancelledLabel",
     color: "bg-red-100 text-red-700 border-red-200",
   },
   COMPLETED: {
-    label: "Selesai",
+    labelKey: "admin.bookings.completedLabel",
     color: "bg-blue-100 text-blue-700 border-blue-200",
   },
   NO_SHOW: {
-    label: "Tidak Hadir",
+    labelKey: "admin.bookings.noShowLabel",
     color: "bg-slate-100 text-slate-600 border-slate-200",
   },
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useI18n();
   const info = statusMap[status] || statusMap.PENDING;
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${info.color}`}
     >
-      {info.label}
+      {t(info.labelKey)}
     </span>
   );
 }
 
-const paymentStatusMap: Record<string, { label: string; color: string }> = {
-  UNPAID: { label: "Belum Bayar", color: "border-amber-200 bg-amber-50 text-amber-700" },
-  PAID:   { label: "Lunas", color: "border-green-200 bg-green-50 text-green-700" },
-  REFUNDED: { label: "Refund", color: "border-purple-200 bg-purple-50 text-purple-700" },
-  FAILED: { label: "Gagal", color: "border-red-200 bg-red-50 text-red-700" },
+const paymentStatusMap: Record<string, { labelKey: string; color: string }> = {
+  UNPAID: { labelKey: "admin.bookings.unpaidLabel", color: "border-amber-200 bg-amber-50 text-amber-700" },
+  PAID:   { labelKey: "admin.bookings.paidLabel", color: "border-green-200 bg-green-50 text-green-700" },
+  REFUNDED: { labelKey: "admin.bookings.refundedLabel", color: "border-purple-200 bg-purple-50 text-purple-700" },
+  FAILED: { labelKey: "admin.bookings.failedLabel", color: "border-red-200 bg-red-50 text-red-700" },
 };
 
 function PaymentBadge({ status, totalPrice }: { status: string; totalPrice: number }) {
+  const { t, locale } = useI18n();
   if (totalPrice === 0) {
     return (
       <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-500">
-        Gratis
+        {t("common.free")}
       </span>
     );
   }
   const info = paymentStatusMap[status] || paymentStatusMap.UNPAID;
-  const formattedPrice = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(totalPrice);
+  const formattedPrice = formatCurrency(totalPrice, locale);
   return (
     <div className="flex flex-col gap-1">
       <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${info.color}`}>
-        {info.label}
+        {t(info.labelKey)}
       </span>
       <span className="text-[10px] text-slate-400">{formattedPrice}</span>
     </div>
@@ -85,6 +97,7 @@ function ActionMenu({
   paymentStatus: string;
   totalPrice: number;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -130,19 +143,19 @@ function ActionMenu({
     if (needsPayment) {
       // Unpaid: show "Mark as Paid" first, then allow confirm
       actions.push(
-        { label: "Tandai Lunas (Bayar Kasir)", status: "MARK_PAID", icon: "💳", className: "text-emerald-700 hover:bg-emerald-50", handler: handleMarkAsPaid },
+        { label: t("admin.bookings.markAsPaid"), status: "MARK_PAID", icon: "💳", className: "text-emerald-700 hover:bg-emerald-50", handler: handleMarkAsPaid },
       );
     }
     actions.push(
-      { label: "Konfirmasi", status: "CONFIRMED", icon: "✅", className: needsPayment ? "text-slate-400 cursor-not-allowed opacity-50" : "text-green-700 hover:bg-green-50" },
-      { label: "Batalkan", status: "CANCEL_PROMPT", icon: "❌", className: "text-red-700 hover:bg-red-50" },
+      { label: t("admin.bookings.confirm"), status: "CONFIRMED", icon: "✅", className: needsPayment ? "text-slate-400 cursor-not-allowed opacity-50" : "text-green-700 hover:bg-green-50" },
+      { label: t("admin.bookings.cancel"), status: "CANCEL_PROMPT", icon: "❌", className: "text-red-700 hover:bg-red-50" },
     );
   }
   if (currentStatus === "CONFIRMED") {
     actions.push(
-      { label: "Tandai Selesai", status: "COMPLETED", icon: "✔️", className: "text-blue-700 hover:bg-blue-50" },
-      { label: "Tidak Hadir", status: "NO_SHOW", icon: "⛔", className: "text-slate-700 hover:bg-slate-50" },
-      { label: "Batalkan", status: "CANCEL_PROMPT", icon: "❌", className: "text-red-700 hover:bg-red-50" },
+      { label: t("admin.bookings.markCompleted"), status: "COMPLETED", icon: "✔️", className: "text-blue-700 hover:bg-blue-50" },
+      { label: t("admin.bookings.noShow"), status: "NO_SHOW", icon: "⛔", className: "text-slate-700 hover:bg-slate-50" },
+      { label: t("admin.bookings.cancel"), status: "CANCEL_PROMPT", icon: "❌", className: "text-red-700 hover:bg-red-50" },
     );
   }
 
@@ -175,7 +188,7 @@ function ActionMenu({
                   onClick={() => setActionError(null)}
                   className="mt-1 text-xs text-red-500 underline hover:text-red-700"
                 >
-                  Tutup
+                  {t("common.close")}
                 </button>
               </div>
             )}
@@ -207,13 +220,13 @@ function ActionMenu({
               </div>
             ) : (
               <div className="p-3">
-                <p className="mb-2 text-xs font-semibold text-red-700">Alasan Pembatalan</p>
+                <p className="mb-2 text-xs font-semibold text-red-700">{t("admin.bookings.cancellationReason")}</p>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   className="mb-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700 outline-none focus:border-red-300 focus:ring-1 focus:ring-red-100 resize-none"
                   rows={2}
-                  placeholder="Opsional: alasan pembatalan..."
+                  placeholder={t("admin.bookings.cancellationPlaceholder")}
                 />
                 <div className="flex gap-2">
                   <button
@@ -221,7 +234,7 @@ function ActionMenu({
                     onClick={() => setShowCancel(false)}
                     className="flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                   >
-                    Kembali
+                    {t("common.back")}
                   </button>
                   <button
                     type="button"
@@ -229,7 +242,7 @@ function ActionMenu({
                     onClick={() => handleAction("CANCELLED", cancelReason)}
                     className="flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                   >
-                    {isPending ? "..." : "Batalkan"}
+                    {isPending ? "..." : t("admin.bookings.cancel")}
                   </button>
                 </div>
               </div>
@@ -252,13 +265,14 @@ export function BookingFilters({
   currentStatus: string;
   currentSearch: string;
 }) {
+  const { t } = useI18n();
   const statuses = [
-    { value: "ALL", label: "Semua" },
-    { value: "PENDING", label: "Menunggu" },
-    { value: "CONFIRMED", label: "Dikonfirmasi" },
-    { value: "COMPLETED", label: "Selesai" },
-    { value: "CANCELLED", label: "Dibatalkan" },
-    { value: "NO_SHOW", label: "Tidak Hadir" },
+    { value: "ALL", label: t("admin.bookings.all") },
+    { value: "PENDING", label: t("admin.bookings.pendingLabel") },
+    { value: "CONFIRMED", label: t("admin.bookings.confirmedLabel") },
+    { value: "COMPLETED", label: t("admin.bookings.completedLabel") },
+    { value: "CANCELLED", label: t("admin.bookings.cancelledLabel") },
+    { value: "NO_SHOW", label: t("admin.bookings.noShowLabel") },
   ];
 
   return (
@@ -272,7 +286,7 @@ export function BookingFilters({
           name="search"
           type="text"
           defaultValue={currentSearch}
-          placeholder="Cari nama atau nomor WA..."
+          placeholder={t("admin.bookings.searchPlaceholder")}
           className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/30"
         />
       </div>
@@ -294,7 +308,7 @@ export function BookingFilters({
         type="submit"
         className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors dark:bg-slate-700 dark:hover:bg-slate-600"
       >
-        Filter
+        {t("admin.bookings.filterButton")}
       </button>
     </form>
   );
@@ -328,6 +342,9 @@ interface BookingRow {
 }
 
 export function BookingTable({ bookings, isOwner = false }: { bookings: BookingRow[]; isOwner?: boolean }) {
+  const { t, locale } = useI18n();
+  const activeLocale = locale === "id" ? localeId : enUS;
+
   if (bookings.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 dark:border-slate-700">
@@ -336,8 +353,8 @@ export function BookingTable({ bookings, isOwner = false }: { bookings: BookingR
             <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
           </svg>
         </div>
-        <p className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400">Tidak ada reservasi ditemukan</p>
-        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Coba ubah filter pencarian Anda.</p>
+        <p className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400">{t("admin.bookings.noBookingsFound")}</p>
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{t("admin.bookings.changeFiltersNotes")}</p>
       </div>
     );
   }
@@ -349,27 +366,27 @@ export function BookingTable({ bookings, isOwner = false }: { bookings: BookingR
         <thead className="border-b border-slate-100 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-800/60">
           <tr>
             <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Pasien
+              {t("admin.bookings.patient")}
             </th>
             <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Layanan
+              {t("admin.bookings.service")}
             </th>
             {isOwner && (
               <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Staf
+                {t("admin.bookings.staff")}
               </th>
             )}
             <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Tanggal & Waktu
+              {t("admin.bookings.dateTime")}
             </th>
             <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Status
+              {t("admin.bookings.status")}
             </th>
             <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Bayar
+              {t("admin.bookings.payment")}
             </th>
             <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Aksi
+              {t("admin.bookings.action")}
             </th>
           </tr>
         </thead>
@@ -409,7 +426,7 @@ export function BookingTable({ bookings, isOwner = false }: { bookings: BookingR
               )}
               <td className="px-5 py-4">
                 <p className="text-sm text-slate-900 dark:text-white">
-                  {format(new Date(b.date), "EEE, d MMM yyyy", { locale: idLocale })}
+                  {format(new Date(b.date), "EEE, d MMM yyyy", { locale: activeLocale })}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {format(new Date(b.startTime), "HH:mm")} – {format(new Date(b.endTime), "HH:mm")}
@@ -466,7 +483,7 @@ export function BookingTable({ bookings, isOwner = false }: { bookings: BookingR
                 </>
               )}
               <span>
-                {format(new Date(b.date), "d MMM", { locale: idLocale })}, {format(new Date(b.startTime), "HH:mm")}
+                {format(new Date(b.date), "d MMM", { locale: activeLocale })}, {format(new Date(b.startTime), "HH:mm")}
               </span>
             </div>
             {b.cancelReason && (

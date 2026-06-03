@@ -2,8 +2,17 @@
 
 import { useActionState, useState } from "react";
 import { saveScheduleAction } from "@/actions/schedule";
+import { useI18n } from "@/lib/i18n/provider";
 
-const DAY_LABELS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const DAY_KEYS = [
+  "common.days.sunday",
+  "common.days.monday",
+  "common.days.tuesday",
+  "common.days.wednesday",
+  "common.days.thursday",
+  "common.days.friday",
+  "common.days.saturday"
+];
 
 interface Session {
   dayOfWeek: number;
@@ -16,6 +25,7 @@ export function ScheduleEditor({
 }: {
   initialSessions: Session[];
 }) {
+  const { t } = useI18n();
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [state, formAction, isPending] = useActionState(saveScheduleAction, {
     error: null,
@@ -65,7 +75,7 @@ export function ScheduleEditor({
       {/* Success/Error */}
       {state.success && (
         <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">
-          ✅ Jadwal berhasil disimpan!
+          ✅ {t("admin.schedule.savedSuccess")}
         </div>
       )}
       {state.error && (
@@ -81,7 +91,8 @@ export function ScheduleEditor({
         }}
       >
         <div className="space-y-3">
-          {DAY_LABELS.map((label, dayOfWeek) => {
+          {DAY_KEYS.map((key, dayOfWeek) => {
+            const label = t(key);
             const daySessions = sessions.filter(
               (s) => s.dayOfWeek === dayOfWeek
             );
@@ -118,7 +129,7 @@ export function ScheduleEditor({
                     </span>
                     {!isActive && (
                       <span className="text-xs text-slate-400 dark:text-slate-500">
-                        (Libur)
+                        {t("admin.schedule.offLabel")}
                       </span>
                     )}
                   </div>
@@ -131,7 +142,7 @@ export function ScheduleEditor({
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                    Sesi
+                    {t("admin.schedule.addSession")}
                   </button>
                 </div>
 
@@ -182,7 +193,7 @@ export function ScheduleEditor({
           disabled={isPending}
           className="mt-6 w-full rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
         >
-          {isPending ? "Menyimpan..." : "💾 Simpan Jadwal"}
+          {isPending ? t("admin.schedule.saving") : `💾 ${t("admin.schedule.saveSchedule")}`}
         </button>
       </form>
     </div>

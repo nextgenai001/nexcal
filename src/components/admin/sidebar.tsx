@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { logoutAction } from "@/actions/auth";
+import { useI18n } from "@/lib/i18n/provider";
+import { setLocaleAction } from "@/actions/locale";
 
 const appName = process.env.NEXT_PUBLIC_APP_NAME || "OpenSlot";
 
 interface NavItem {
+  key: string;
   label: string;
   href: string;
   icon: React.ReactNode;
@@ -14,6 +17,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
+    key: "admin.sidebar.dashboard",
     label: "Dashboard",
     href: "/admin/dashboard",
     icon: (
@@ -23,6 +27,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    key: "admin.sidebar.services",
     label: "Layanan",
     href: "/admin/services",
     icon: (
@@ -33,6 +38,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    key: "admin.sidebar.schedule",
     label: "Jadwal",
     href: "/admin/schedule",
     icon: (
@@ -42,6 +48,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    key: "admin.sidebar.bookings",
     label: "Reservasi",
     href: "/admin/bookings",
     icon: (
@@ -51,6 +58,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    key: "admin.sidebar.settings",
     label: "Pengaturan",
     href: "/admin/settings",
     icon: (
@@ -64,6 +72,8 @@ const navItems: NavItem[] = [
 
 export function AdminSidebar({ user }: { user: { name?: string | null; email?: string | null; clinicName?: string; role?: string } }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { t, locale } = useI18n();
 
   // Sidebar header: tampilkan clinicName dari session, atau appName sebagai fallback
   const displayName = user.clinicName || appName;
@@ -73,6 +83,7 @@ export function AdminSidebar({ user }: { user: { name?: string | null; email?: s
     ? [
         ...navItems.slice(0, 4),
         {
+          key: "admin.sidebar.staff",
           label: "Tim Staf",
           href: "/admin/staff",
           icon: (
@@ -96,7 +107,7 @@ export function AdminSidebar({ user }: { user: { name?: string | null; email?: s
         </div>
         <div>
           <h1 className="text-lg font-bold text-slate-900 dark:text-white truncate">{displayName}</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Admin Panel</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t("admin.sidebar.adminPanel")}</p>
         </div>
       </div>
 
@@ -115,7 +126,7 @@ export function AdminSidebar({ user }: { user: { name?: string | null; email?: s
               }`}
             >
               <span className={isActive ? "text-blue-600 dark:text-blue-400" : ""}>{item.icon}</span>
-              {item.label}
+              {t(item.key)}
             </Link>
           );
         })}
@@ -123,6 +134,19 @@ export function AdminSidebar({ user }: { user: { name?: string | null; email?: s
 
       {/* User Info & Logout */}
       <div className="border-t border-slate-200 p-4 dark:border-slate-800">
+        <div className="mb-3">
+          <select
+            value={locale}
+            onChange={async (e) => {
+              await setLocaleAction(e.target.value);
+              router.refresh();
+            }}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-all focus:border-blue-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          >
+            <option value="en">English</option>
+            <option value="id">Bahasa Indonesia</option>
+          </select>
+        </div>
         <div className="mb-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
           <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
             {user.name}
@@ -139,7 +163,7 @@ export function AdminSidebar({ user }: { user: { name?: string | null; email?: s
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
             </svg>
-            Keluar
+            {t("admin.sidebar.logout")}
           </button>
         </form>
       </div>

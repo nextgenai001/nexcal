@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getDataScope } from "@/lib/rbac";
 import { auth } from "@/lib/auth";
 import { AddServiceButton, ServiceCardActions } from "@/components/admin/service-form";
+import { getTranslator } from "@/lib/i18n/server";
 
 interface ServiceWithProvider {
   id: string;
@@ -18,7 +19,11 @@ interface ServiceWithProvider {
 }
 
 export default async function ServicesPage() {
-  const [scope, session] = await Promise.all([getDataScope(), auth()]);
+  const [scope, session, { t, locale }] = await Promise.all([
+    getDataScope(),
+    auth(),
+    getTranslator(),
+  ]);
   if (!scope) return null;
 
   const isOwner = session?.user?.role === "OWNER";
@@ -47,10 +52,10 @@ export default async function ServicesPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Jenis Layanan
+            {t("admin.services.title")}
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Kelola layanan yang tersedia beserta durasi konsultasi/tindakan.
+            {t("admin.services.subtitle")}
           </p>
         </div>
         <AddServiceButton />
@@ -65,13 +70,17 @@ export default async function ServicesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
             </svg>
           </div>
-          <p className="mt-4 text-sm font-medium text-slate-900 dark:text-white">Belum ada layanan</p>
-          <p className="mt-1 text-xs text-slate-500">Klik "Tambah Layanan" untuk memulai.</p>
+          <p className="mt-4 text-sm font-medium text-slate-900 dark:text-white">
+            {t("admin.services.noServices")}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {t("admin.services.clickAddService")}
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
-            <ServiceCard key={service.id} service={service} isOwner={isOwner} />
+            <ServiceCard key={service.id} service={service} isOwner={isOwner} locale={locale} t={t} />
           ))}
         </div>
       )}
@@ -82,17 +91,30 @@ export default async function ServicesPage() {
 function ServiceCard({
   service,
   isOwner,
+  locale,
+  t,
 }: {
   service: ServiceWithProvider;
   isOwner: boolean;
+  locale: string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const durasiLabel = service.duration >= 60
-    ? `${Math.floor(service.duration / 60)} jam${service.duration % 60 > 0 ? ` ${service.duration % 60} menit` : ""}`
-    : `${service.duration} menit`;
+    ? locale === "id"
+      ? `${Math.floor(service.duration / 60)} jam${service.duration % 60 > 0 ? ` ${service.duration % 60} menit` : ""}`
+      : `${Math.floor(service.duration / 60)} hr${Math.floor(service.duration / 60) > 1 ? "s" : ""}${service.duration % 60 > 0 ? ` ${service.duration % 60} mins` : ""}`
+    : locale === "id"
+      ? `${service.duration} menit`
+      : `${service.duration} mins`;
 
   const priceLabel = service.price > 0
-    ? `Rp ${service.price.toLocaleString("id-ID")}`
-    : "Gratis";
+    ? new Intl.NumberFormat(locale === "id" ? "id-ID" : "en-US", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(service.price)
+    : t("common.free");
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
@@ -138,7 +160,7 @@ function ServiceCard({
             {/* Buffer time badge */}
             {service.bufferTime > 0 && (
               <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
-                Jeda {service.bufferTime} mnt
+                {t("admin.services.bufferLabel", { time: service.bufferTime })}
               </span>
             )}
 
@@ -150,7 +172,7 @@ function ServiceCard({
                   : "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
               }`}
             >
-              {service.isActive ? "Aktif" : "Nonaktif"}
+              {service.isActive ? t("admin.services.activeBadge") : t("admin.services.inactiveBadge")}
             </span>
 
             {/* Provider badge (OWNER only) */}

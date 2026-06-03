@@ -7,6 +7,7 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, format } from "date-fns";
 import { notifyBookingConfirmed, notifyBookingCancelled } from "@/lib/whatsapp";
 import { pushBookingToCalendar } from "@/lib/gcal";
 import { getDataScope } from "@/lib/rbac";
+import { getTranslator } from "@/lib/i18n/server";
 
 // ============================================================
 // Tipe & Interface
@@ -48,7 +49,10 @@ export async function getBookings(
   filters?: BookingFilters
 ): Promise<BookingWithService[]> {
   const scope = await getDataScope();
-  if (!scope) throw new Error("Unauthorized");
+  if (!scope) {
+    const { t } = await getTranslator();
+    throw new Error(t("errors.unauthorized"));
+  }
 
   const where: Record<string, unknown> = {
     ...scope.userFilter,
@@ -99,12 +103,6 @@ export async function getBookings(
 // updateBookingStatus — Ubah status reservasi (RBAC)
 // ============================================================
 
-const updateStatusSchema = z.object({
-  bookingId: z.string().min(1, "Booking ID wajib diisi."),
-  status: z.enum(["CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"]),
-  cancelReason: z.string().max(500).optional(),
-});
-
 export interface UpdateStatusResult {
   success: boolean;
   error: string | null;
@@ -113,10 +111,11 @@ export interface UpdateStatusResult {
 export async function updateBookingStatus(
   formData: FormData
 ): Promise<UpdateStatusResult> {
+  const { t } = await getTranslator();
   try {
     const scope = await getDataScope();
     if (!scope) {
-      return { success: false, error: "Sesi tidak valid. Silakan login ulang." };
+      return { success: false, error: t("errors.sessionInvalid") };
     }
 
     const raw = {
@@ -125,11 +124,17 @@ export async function updateBookingStatus(
       cancelReason: (formData.get("cancelReason") as string) || undefined,
     };
 
+    const updateStatusSchema = z.object({
+      bookingId: z.string().min(1, t("errors.bookingIdRequired")),
+      status: z.enum(["CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"]),
+      cancelReason: z.string().max(500, t("errors.cancelReasonTooLong")).optional(),
+    });
+
     const parsed = updateStatusSchema.safeParse(raw);
     if (!parsed.success) {
       return {
         success: false,
-        error: parsed.error.issues[0]?.message || "Data tidak valid.",
+        error: parsed.error.issues[0]?.message || t("errors.invalidData"),
       };
     }
 
@@ -145,14 +150,14 @@ export async function updateBookingStatus(
     });
 
     if (!booking) {
-      return { success: false, error: "Reservasi tidak ditemukan." };
+      return { success: false, error: t("errors.bookingNotFound") };
     }
 
     // Payment guard: prevent confirming unpaid bookings
     if (status === "CONFIRMED" && booking.totalPrice > 0 && booking.paymentStatus !== "PAID") {
       return {
         success: false,
-        error: "Reservasi berbayar harus lunas sebelum dikonfirmasi! Gunakan 'Tandai Lunas' terlebih dahulu.",
+        error: t("admin.bookings.errorPaidGuard"),
       };
     }
 
@@ -211,7 +216,7 @@ export async function updateBookingStatus(
           });
           return {
             success: false,
-            error: `Konfirmasi dibatalkan karena link Google Meet gagal dibuat: ${errorMsg}`,
+            error: t("admin.bookings.errorGcalVirtual", { error: errorMsg }),
           };
         }
         // Non-virtual: GCal failure is non-blocking, just log it
@@ -225,7 +230,7 @@ export async function updateBookingStatus(
 
     return { success: true, error: null };
   } catch {
-    return { success: false, error: "Terjadi kesalahan sistem." };
+    return { success: false, error: t("errors.systemError") };
   }
 }
 
@@ -234,23 +239,24 @@ export async function updateBookingStatus(
 // ============================================================
 
 export async function markAsPaidAction(bookingId: string): Promise<{ success: boolean; error: string | null }> {
+  const { t } = await getTranslator();
   try {
     const scope = await getDataScope();
-    if (!scope) return { success: false, error: "Unauthorized" };
+    if (!scope) return { success: false, error: t("errors.unauthorized") };
 
     const booking = await prisma.booking.findFirst({
       where: { id: bookingId, ...scope.userFilter },
       select: { id: true, paymentStatus: true, totalPrice: true },
     });
 
-    if (!booking) return { success: false, error: "Reservasi tidak ditemukan." };
+    if (!booking) return { success: false, error: t("errors.bookingNotFound") };
 
     if (booking.paymentStatus === "PAID") {
-      return { success: false, error: "Reservasi sudah lunas." };
+      return { success: false, error: t("errors.bookingAlreadyPaid") };
     }
 
     if (booking.totalPrice <= 0) {
-      return { success: false, error: "Reservasi ini gratis, tidak perlu ditandai lunas." };
+      return { success: false, error: t("errors.bookingFreeNoPayment") };
     }
 
     await prisma.booking.update({
@@ -261,7 +267,7 @@ export async function markAsPaidAction(bookingId: string): Promise<{ success: bo
     revalidatePath("/admin/bookings");
     return { success: true, error: null };
   } catch {
-    return { success: false, error: "Terjadi kesalahan sistem." };
+    return { success: false, error: t("errors.systemError") };
   }
 }
 
@@ -278,7 +284,10 @@ export interface DashboardStats {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const scope = await getDataScope();
-  if (!scope) throw new Error("Unauthorized");
+  if (!scope) {
+    const { t } = await getTranslator();
+    throw new Error(t("errors.unauthorized"));
+  }
 
   const now = new Date();
   const todayStart = startOfDay(now);
@@ -323,7 +332,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 export async function getTodayBookings(): Promise<BookingWithService[]> {
   const scope = await getDataScope();
-  if (!scope) throw new Error("Unauthorized");
+  if (!scope) {
+    const { t } = await getTranslator();
+    throw new Error(t("errors.unauthorized"));
+  }
 
   const now = new Date();
 

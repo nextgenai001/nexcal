@@ -2,10 +2,12 @@
 
 import { useActionState } from "react";
 import { loginAction } from "@/actions/auth";
+import { useI18n } from "@/lib/i18n/provider";
 
 const appName = process.env.NEXT_PUBLIC_APP_NAME || "OpenSlot";
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const [state, formAction, isPending] = useActionState(loginAction, {
     error: null,
     success: false,
@@ -48,10 +50,10 @@ export default function LoginPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-white">
-              Masuk ke Dashboard
+              {t("auth.title")}
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              Gunakan akun admin untuk mengelola jadwal dan reservasi
+              {t("auth.subtitle")}
             </p>
           </div>
 
@@ -82,7 +84,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="mb-1.5 block text-sm font-medium text-slate-300"
               >
-                Email
+                {t("auth.email")}
               </label>
               <input
                 id="email"
@@ -101,7 +103,7 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="mb-1.5 block text-sm font-medium text-slate-300"
               >
-                Password
+                {t("auth.password")}
               </label>
               <input
                 id="password"
@@ -141,10 +143,10 @@ export default function LoginPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  Memproses...
+                  {t("auth.signingIn")}
                 </span>
               ) : (
-                "Masuk"
+                t("auth.signIn")
               )}
             </button>
           </form>

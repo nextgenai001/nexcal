@@ -3,6 +3,7 @@
 import { useState, useEffect, useActionState } from "react";
 import { getAvailableSlotsAction, getActiveServices } from "@/actions/slots";
 import { createBookingAction } from "@/actions/booking";
+import { useI18n } from "@/lib/i18n/provider";
 import {
   format,
   addMonths,
@@ -15,7 +16,7 @@ import {
   startOfDay,
   getDay,
 } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
+import { id as idLocale, enUS } from "date-fns/locale";
 
 const appName = process.env.NEXT_PUBLIC_APP_NAME || "NexCal";
 
@@ -35,8 +36,8 @@ interface Service {
   color: string | null;
 }
 
-function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat("id-ID", {
+function formatCurrency(amount: number, locale: string): string {
+  return new Intl.NumberFormat(locale === "id" ? "id-ID" : "en-US", {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
@@ -51,7 +52,7 @@ interface TimeSlot {
 }
 
 // ============================================================
-// Step 1: Provider Selector (NEW in v2.0)
+// Step 1: Provider Selector
 // ============================================================
 function ProviderSelector({
   providers,
@@ -62,6 +63,8 @@ function ProviderSelector({
   selected: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useI18n();
+
   // If only 1 provider, auto-select
   useEffect(() => {
     if (providers.length === 1 && !selected) {
@@ -75,10 +78,10 @@ function ProviderSelector({
   return (
     <div>
       <h2 className="mb-1 text-lg font-semibold text-slate-900">
-        Pilih Praktisi
+        {t("booking.selectPractitioner")}
       </h2>
       <p className="mb-4 text-sm text-slate-500">
-        Pilih staf atau dokter yang akan menangani Anda.
+        {t("booking.practitionerSubtitle")}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {providers.map((p) => {
@@ -146,6 +149,8 @@ function ServiceSelector({
   onSelect: (id: string) => void;
   loading: boolean;
 }) {
+  const { t, locale } = useI18n();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -153,7 +158,7 @@ function ServiceSelector({
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
-        <span className="ml-2 text-sm text-slate-500">Memuat layanan...</span>
+        <span className="ml-2 text-sm text-slate-500">{t("booking.loadingServices")}</span>
       </div>
     );
   }
@@ -161,18 +166,18 @@ function ServiceSelector({
   return (
     <div>
       <h2 className="mb-1 text-lg font-semibold text-slate-900">
-        Pilih Layanan
+        {t("booking.selectService")}
       </h2>
       <p className="mb-4 text-sm text-slate-500">
-        Jenis layanan menentukan durasi slot reservasi Anda.
+        {t("booking.serviceSubtitle")}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {services.map((s) => {
           const isActive = selected === s.id;
           const durationLabel =
             s.duration >= 60
-              ? `${Math.floor(s.duration / 60)} jam${s.duration % 60 ? ` ${s.duration % 60} mnt` : ""}`
-              : `${s.duration} menit`;
+              ? `${Math.floor(s.duration / 60)} ${locale === "id" ? "jam" : "h"}${s.duration % 60 ? ` ${s.duration % 60} ${locale === "id" ? "mnt" : "m"}` : ""}`
+              : `${s.duration} ${locale === "id" ? "menit" : "mins"}`;
 
           return (
             <button
@@ -211,7 +216,7 @@ function ServiceSelector({
                     ? "bg-emerald-50 text-emerald-700"
                     : "bg-slate-100 text-slate-500"
                 }`}>
-                  {s.price > 0 ? formatRupiah(s.price) : "Gratis"}
+                  {s.price > 0 ? formatCurrency(s.price, locale) : t("common.free")}
                 </span>
                 {s.price > 0 && s.dpPercentage > 0 && s.dpPercentage < 100 && (
                   <span className="inline-flex items-center rounded-lg bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
@@ -244,6 +249,7 @@ function CalendarPicker({
   selectedDate: Date | null;
   onSelect: (date: Date) => void;
 }) {
+  const { t, locale } = useI18n();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = startOfDay(new Date());
 
@@ -254,13 +260,18 @@ function CalendarPicker({
   const startDayOfWeek = getDay(monthStart);
   const paddingDays = Array.from({ length: startDayOfWeek }, (_, i) => i);
 
+  const activeLocale = locale === "id" ? idLocale : enUS;
+  const dayNames = locale === "id"
+    ? ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
   return (
     <div>
       <h2 className="mb-1 text-lg font-semibold text-slate-900">
-        Pilih Tanggal
+        {t("booking.selectDate")}
       </h2>
       <p className="mb-4 text-sm text-slate-500">
-        Pilih tanggal reservasi Anda.
+        {t("booking.dateSubtitle")}
       </p>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -275,7 +286,7 @@ function CalendarPicker({
             </svg>
           </button>
           <h3 className="text-sm font-semibold text-slate-900">
-            {format(currentMonth, "MMMM yyyy", { locale: idLocale })}
+            {format(currentMonth, "MMMM yyyy", { locale: activeLocale })}
           </h3>
           <button
             type="button"
@@ -289,7 +300,7 @@ function CalendarPicker({
         </div>
 
         <div className="mb-1 grid grid-cols-7 text-center text-xs font-medium text-slate-400">
-          {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((d) => (
+          {dayNames.map((d) => (
             <div key={d} className="py-1">{d}</div>
           ))}
         </div>
@@ -343,6 +354,8 @@ function SlotPicker({
   onSelect: (time: string) => void;
   loading: boolean;
 }) {
+  const { t } = useI18n();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -350,7 +363,7 @@ function SlotPicker({
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
-        <span className="ml-2 text-sm text-slate-500">Memuat slot...</span>
+        <span className="ml-2 text-sm text-slate-500">{t("booking.loadingSlots")}</span>
       </div>
     );
   }
@@ -361,10 +374,10 @@ function SlotPicker({
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-center">
         <p className="text-sm font-medium text-amber-700">
-          ❌ Tidak ada jadwal operasional untuk tanggal ini.
+          ❌ {t("booking.noOperationalHours")}
         </p>
         <p className="mt-1 text-xs text-amber-600">
-          Mungkin hari libur atau di luar jam operasional. Coba pilih tanggal lain.
+          {t("booking.chooseAnotherDate")}
         </p>
       </div>
     );
@@ -374,10 +387,10 @@ function SlotPicker({
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center">
         <p className="text-sm font-medium text-red-700">
-          📅 Semua slot sudah terisi untuk tanggal ini.
+          📅 {t("booking.fullyBooked")}
         </p>
         <p className="mt-1 text-xs text-red-600">
-          Silakan pilih tanggal lain.
+          {t("booking.chooseAnotherDate")}
         </p>
       </div>
     );
@@ -386,7 +399,7 @@ function SlotPicker({
   return (
     <div>
       <p className="mb-3 text-sm text-slate-500">
-        {available.length} slot tersedia
+        {t("booking.slotsAvailable", { count: available.length })}
       </p>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {slots.map((slot) => {
@@ -427,13 +440,16 @@ function BookingForm({
   date: string;
   time: string;
   onBack: () => void;
-  }) {
+}) {
+  const { t, locale } = useI18n();
   const [state, formAction, isPending] = useActionState(createBookingAction, {
     success: false,
     error: null,
     bookingId: null,
     summary: null,
   });
+
+  const activeLocale = locale === "id" ? idLocale : enUS;
 
   if (state.success && state.summary) {
     return <BookingSuccess summary={state.summary} />;
@@ -449,20 +465,20 @@ function BookingForm({
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
         </svg>
-        Kembali pilih waktu
+        {t("booking.backToTime")}
       </button>
 
       <h2 className="mb-1 text-lg font-semibold text-slate-900">
-        Data Reservasi
+        {t("booking.enterDetails")}
       </h2>
       <p className="mb-4 text-sm text-slate-500">
-        Lengkapi data berikut untuk menyelesaikan reservasi.
+        {t("booking.detailsSubtitle")}
       </p>
 
       <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-        <p className="text-xs font-medium text-blue-600">Slot dipilih</p>
+        <p className="text-xs font-medium text-blue-600">{t("booking.selectedSlot")}</p>
         <p className="text-sm font-semibold text-blue-900">
-          {format(new Date(date), "EEEE, d MMMM yyyy", { locale: idLocale })} — pukul {time}
+          {format(new Date(date), "EEEE, d MMMM yyyy", { locale: activeLocale })} — {time}
         </p>
       </div>
 
@@ -479,41 +495,41 @@ function BookingForm({
 
         <div>
           <label htmlFor="patientName" className="mb-1 block text-sm font-medium text-slate-700">
-            Nama Lengkap *
+            {t("booking.fullName")}
           </label>
           <input
             id="patientName"
             name="patientName"
             type="text"
             required
-            placeholder="Contoh: Siti Rahayu"
+            placeholder={t("booking.fullNamePlaceholder")}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
 
         <div>
           <label htmlFor="patientPhone" className="mb-1 block text-sm font-medium text-slate-700">
-            Nomor WhatsApp *
+            {t("booking.whatsappNumber")}
           </label>
           <input
             id="patientPhone"
             name="patientPhone"
             type="tel"
             required
-            placeholder="08xxxxxxxxxx"
+            placeholder={t("booking.whatsappPlaceholder")}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
 
         <div>
           <label htmlFor="patientNotes" className="mb-1 block text-sm font-medium text-slate-700">
-            Keluhan / Catatan
+            {t("booking.notesLabel")}
           </label>
           <textarea
             id="patientNotes"
             name="patientNotes"
             rows={3}
-            placeholder="Tuliskan keluhan atau catatan penting (opsional)"
+            placeholder={t("booking.notesPlaceholder")}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none"
           />
         </div>
@@ -529,10 +545,10 @@ function BookingForm({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Memproses Reservasi...
+              {t("booking.processingBooking")}
             </span>
           ) : (
-            "✅ Konfirmasi Reservasi"
+            `✅ ${t("booking.confirmBooking")}`
           )}
         </button>
       </form>
@@ -543,8 +559,22 @@ function BookingForm({
 // ============================================================
 // Booking Success
 // ============================================================
-function BookingSuccess({ summary }: { summary: { serviceName: string; date: string; time: string; patientName: string; paymentUrl?: string; totalPrice?: number; manageUrl?: string } }) {
+function BookingSuccess({
+  summary,
+}: {
+  summary: {
+    serviceName: string;
+    date: string;
+    time: string;
+    patientName: string;
+    paymentUrl?: string;
+    totalPrice?: number;
+    manageUrl?: string;
+  };
+}) {
+  const { t, locale } = useI18n();
   const needsPayment = !!summary.paymentUrl && (summary.totalPrice ?? 0) > 0;
+  const activeLocale = locale === "id" ? idLocale : enUS;
 
   return (
     <div className="py-6 text-center">
@@ -560,40 +590,42 @@ function BookingSuccess({ summary }: { summary: { serviceName: string; date: str
         )}
       </div>
       <h2 className="text-xl font-bold text-slate-900">
-        {needsPayment ? "Reservasi Tercatat! 📋" : "Reservasi Berhasil! 🎉"}
+        {needsPayment ? t("booking.bookingRegistered") : t("booking.bookingConfirmed")}
       </h2>
       <p className="mt-2 text-sm text-slate-500">
         {needsPayment
-          ? `Terima kasih, ${summary.patientName}. Silakan selesaikan pembayaran untuk mengonfirmasi.`
-          : `Terima kasih, ${summary.patientName}. Reservasi Anda telah tercatat.`
+          ? t("booking.paymentConfirmationRequired", { patientName: summary.patientName })
+          : t("booking.bookingRegisteredShort", { patientName: summary.patientName })
         }
       </p>
 
       <div className="mx-auto mt-6 max-w-sm rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Ringkasan
+          {t("booking.summary")}
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Layanan</span>
+            <span className="text-slate-500">{t("common.service")}</span>
             <span className="font-medium text-slate-900">{summary.serviceName}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Tanggal</span>
+            <span className="text-slate-500">{t("common.date")}</span>
             <span className="font-medium text-slate-900">
-              {format(new Date(summary.date), "EEEE, d MMMM yyyy", { locale: idLocale })}
+              {format(new Date(summary.date), "EEEE, d MMMM yyyy", { locale: activeLocale })}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Pukul</span>
-            <span className="font-medium text-slate-900">{summary.time} WIB</span>
+            <span className="text-slate-500">{t("common.time")}</span>
+            <span className="font-medium text-slate-900">
+              {summary.time} {locale === "id" ? "WIB" : "WIB"}
+            </span>
           </div>
           {summary.totalPrice != null && summary.totalPrice > 0 && (
             <>
               <div className="my-2 border-t border-dashed border-slate-200" />
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Pembayaran</span>
-                <span className="font-bold text-emerald-700">{formatRupiah(summary.totalPrice)}</span>
+                <span className="text-slate-500">{t("booking.payment")}</span>
+                <span className="font-bold text-emerald-700">{formatCurrency(summary.totalPrice, locale)}</span>
               </div>
             </>
           )}
@@ -609,14 +641,14 @@ function BookingSuccess({ summary }: { summary: { serviceName: string; date: str
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
           </svg>
-          💳 Bayar Sekarang — {formatRupiah(summary.totalPrice!)}
+          {t("booking.payNow", { amount: formatCurrency(summary.totalPrice!, locale) })}
         </a>
       )}
 
       {!needsPayment && (
         <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
           <p className="text-xs text-blue-600">
-            💡 Status reservasi: <span className="font-semibold">PENDING</span>. Anda akan mendapat konfirmasi dari admin.
+            {t("booking.pendingConfirmationNotes")}
           </p>
         </div>
       )}
@@ -625,16 +657,16 @@ function BookingSuccess({ summary }: { summary: { serviceName: string; date: str
       {summary.manageUrl && (
         <div className="mx-auto mt-5 max-w-sm">
           <a
-            href={summary.manageUrl}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-500 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+             href={summary.manageUrl}
+             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-500 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
             </svg>
-            📋 Kelola Reservasi Anda
+            {t("booking.manageBooking")}
           </a>
           <p className="mt-2 text-[11px] text-slate-400">
-            Simpan link ini untuk melihat status, menjadwalkan ulang, atau membatalkan reservasi.
+            {t("booking.saveLinkWarning")}
           </p>
         </div>
       )}
@@ -644,16 +676,17 @@ function BookingSuccess({ summary }: { summary: { serviceName: string; date: str
         onClick={() => window.location.reload()}
         className="mt-6 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50"
       >
-        Buat Reservasi Lain
+        {t("booking.makeAnotherBooking")}
       </button>
     </div>
   );
 }
 
 // ============================================================
-// Main Booking Wizard (Orchestrator) — v2.0 with Provider Step
+// Main Booking Wizard (Orchestrator)
 // ============================================================
 export function BookingWizard({ providers }: { providers: Provider[] }) {
+  const { t } = useI18n();
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
@@ -708,7 +741,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
     return () => { cancelled = true; };
   }, [selectedService, selectedDate]);
 
-  // Step tracking — offset by 1 if multi-provider (step 0 = provider)
+  // Step tracking
   const stepOffset = hasMultipleProviders ? 1 : 0;
   const currentStep =
     showForm
@@ -724,8 +757,8 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
               : 0;
 
   const stepLabels = hasMultipleProviders
-    ? ["Praktisi", "Layanan", "Tanggal", "Waktu", "Data Diri"]
-    : ["Layanan", "Tanggal", "Waktu", "Data Diri"];
+    ? [t("booking.steps.provider"), t("booking.steps.service"), t("booking.steps.date"), t("booking.steps.time"), t("booking.steps.details")]
+    : [t("booking.steps.service"), t("booking.steps.date"), t("booking.steps.time"), t("booking.steps.details")];
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -744,7 +777,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
             href="/login"
             className="text-xs text-slate-400 hover:text-slate-600"
           >
-            Admin Login
+            {t("booking.adminLogin")}
           </a>
         </div>
       </header>
@@ -800,7 +833,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
               }}
             />
 
-            {/* Step 2: Service (filtered by provider) */}
+            {/* Step 2: Service */}
             {selectedProvider && (
               <ServiceSelector
                 services={services}
@@ -830,10 +863,10 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
             {selectedService && selectedDate && (
               <div>
                 <h2 className="mb-1 text-lg font-semibold text-slate-900">
-                  Pilih Waktu
+                  {t("booking.selectTime")}
                 </h2>
                 <p className="mb-4 text-sm text-slate-500">
-                  Pilih salah satu slot yang tersedia.
+                  {t("booking.timeSubtitle")}
                 </p>
                 <SlotPicker
                   slots={slots}
@@ -851,7 +884,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
                 onClick={() => setShowForm(true)}
                 className="w-full rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
               >
-                Lanjut → Isi Data Diri
+                {t("booking.continueToDetails")}
               </button>
             )}
           </div>
@@ -861,7 +894,7 @@ export function BookingWizard({ providers }: { providers: Provider[] }) {
       {/* Footer */}
       <footer className="border-t border-slate-100 bg-white py-4 text-center">
         <p className="text-xs text-slate-400">
-          Powered by {appName} — Self-Hosted Booking System
+          {t("booking.poweredBy", { appName })}
         </p>
       </footer>
     </div>

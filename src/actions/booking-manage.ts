@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { getAvailableSlots, ScheduleSession, DateOverrideData, ExistingBooking } from "@/lib/slots";
 import { parse, startOfDay, addMinutes } from "date-fns";
 import { revalidatePath } from "next/cache";
+import { getTranslator } from "@/lib/i18n/server";
 
 // ============================================================
 // Types
@@ -97,9 +98,10 @@ async function canModifyBooking(booking: ManagedBooking): Promise<{
   canReschedule: boolean;
   reason?: string;
 }> {
+  const { t } = await getTranslator();
   const isActive = ["PENDING", "CONFIRMED"].includes(booking.status);
   if (!isActive) {
-    return { canCancel: false, canReschedule: false, reason: "Booking sudah tidak aktif." };
+    return { canCancel: false, canReschedule: false, reason: t("portal.inactiveBooking") };
   }
   const now = new Date();
   const hoursUntilStart = (new Date(booking.startTime).getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -107,14 +109,14 @@ async function canModifyBooking(booking: ManagedBooking): Promise<{
     return {
       canCancel: false,
       canReschedule: false,
-      reason: "Perubahan hanya bisa dilakukan minimal 24 jam sebelum jadwal.",
+      reason: t("errors.modifyBookingTimeLimit"),
     };
   }
   const canReschedule = booking.rescheduleCount < 1;
   return {
     canCancel: true,
     canReschedule,
-    reason: canReschedule ? undefined : "Batas perubahan jadwal telah habis. Silakan hubungi admin.",
+    reason: canReschedule ? undefined : t("errors.rescheduleLimitReached"),
   };
 }
 
@@ -125,8 +127,9 @@ async function canModifyBooking(booking: ManagedBooking): Promise<{
 export async function cancelBookingByPatient(
   token: string
 ): Promise<{ success: boolean; error?: string }> {
+  const { t } = await getTranslator();
   const booking = await getBookingByToken(token);
-  if (!booking) return { success: false, error: "Booking tidak ditemukan." };
+  if (!booking) return { success: false, error: t("errors.bookingNotFound") };
 
   const { canCancel, reason } = await canModifyBooking(booking);
   if (!canCancel) return { success: false, error: reason };
@@ -135,7 +138,7 @@ export async function cancelBookingByPatient(
     where: { id: booking.id },
     data: {
       status: "CANCELLED",
-      cancelReason: "Dibatalkan oleh pasien melalui portal",
+      cancelReason: t("portal.cancelledByPatientReason"),
     },
   });
 
@@ -152,8 +155,9 @@ export async function rescheduleBookingByPatient(
   newDate: string,   // "YYYY-MM-DD"
   newTime: string    // "HH:mm"
 ): Promise<{ success: boolean; error?: string }> {
+  const { t } = await getTranslator();
   const booking = await getBookingByToken(token);
-  if (!booking) return { success: false, error: "Booking tidak ditemukan." };
+  if (!booking) return { success: false, error: t("errors.bookingNotFound") };
 
   const { canReschedule, reason } = await canModifyBooking(booking);
   if (!canReschedule) return { success: false, error: reason };
@@ -166,7 +170,7 @@ export async function rescheduleBookingByPatient(
   // Verify new slot is in the future (>= 24h from now)
   const now = new Date();
   if (slotStart.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
-    return { success: false, error: "Jadwal baru harus minimal 24 jam dari sekarang." };
+    return { success: false, error: t("errors.newScheduleTimeLimit") };
   }
 
   // Get the provider's userId from the booking
@@ -174,7 +178,7 @@ export async function rescheduleBookingByPatient(
     where: { managementToken: token },
     select: { id: true, userId: true },
   });
-  if (!fullBooking) return { success: false, error: "Booking tidak ditemukan." };
+  if (!fullBooking) return { success: false, error: t("errors.bookingNotFound") };
 
   const dayOfWeek = refDate.getDay();
 
@@ -222,7 +226,7 @@ export async function rescheduleBookingByPatient(
   const isAvailable = slots.some((s) => s.startTime === newTime && s.available);
 
   if (!isAvailable) {
-    return { success: false, error: "Slot yang dipilih tidak tersedia. Silakan pilih waktu lain." };
+    return { success: false, error: t("errors.selectedSlotUnavailable") };
   }
 
   // Update booking with new datetime + increment rescheduleCount
@@ -237,7 +241,7 @@ export async function rescheduleBookingByPatient(
       },
     });
   } catch {
-    return { success: false, error: "Slot ini baru saja dipesan oleh orang lain." };
+    return { success: false, error: t("errors.slotJustBooked") };
   }
 
   revalidatePath(`/booking/manage/${token}`);

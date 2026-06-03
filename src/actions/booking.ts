@@ -6,27 +6,7 @@ import { getAvailableSlots, ScheduleSession, DateOverrideData, ExistingBooking }
 import { parse, startOfDay, addMinutes, format } from "date-fns";
 import { notifyBookingReceived } from "@/lib/whatsapp";
 import { getPaymentProvider, isPaymentEnabled, calculatePaymentAmount } from "@/lib/payment/core";
-
-
-// ============================================================
-// Schema Validasi (Lapis 1: Zod)
-// ============================================================
-
-const bookingSchema = z.object({
-  serviceTypeId: z.string().min(1, "Pilih jenis layanan."),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal tidak valid."),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Waktu tidak valid."),
-  patientName: z
-    .string()
-    .min(2, "Nama minimal 2 karakter.")
-    .max(100, "Nama terlalu panjang."),
-  patientPhone: z
-    .string()
-    .min(10, "Nomor WhatsApp minimal 10 digit.")
-    .max(20, "Nomor WhatsApp terlalu panjang.")
-    .regex(/^[0-9+\-\s]+$/, "Format nomor tidak valid."),
-  patientNotes: z.string().max(500, "Catatan terlalu panjang.").optional(),
-});
+import { getTranslator } from "@/lib/i18n/server";
 
 // ============================================================
 // Server Action: createBooking
@@ -55,6 +35,7 @@ export async function createBookingAction(
   _prevState: BookingResult,
   formData: FormData
 ): Promise<BookingResult> {
+  const { t } = await getTranslator();
   const empty: BookingResult = { success: false, error: null, bookingId: null, summary: null };
 
   try {
@@ -70,9 +51,25 @@ export async function createBookingAction(
       patientNotes: (formData.get("patientNotes") as string) || undefined,
     };
 
+    const bookingSchema = z.object({
+      serviceTypeId: z.string().min(1, t("errors.selectService")),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t("errors.invalidDate")),
+      startTime: z.string().regex(/^\d{2}:\d{2}$/, t("errors.invalidTime")),
+      patientName: z
+        .string()
+        .min(2, t("errors.nameMin"))
+        .max(100, t("errors.nameMax")),
+      patientPhone: z
+        .string()
+        .min(10, t("errors.whatsappMin"))
+        .max(20, t("errors.whatsappMax"))
+        .regex(/^[0-9+\-\s]+$/, t("errors.whatsappFormat")),
+      patientNotes: z.string().max(500, t("errors.noteMax")).optional(),
+    });
+
     const parsed = bookingSchema.safeParse(raw);
     if (!parsed.success) {
-      const firstError = parsed.error.issues[0]?.message || "Data tidak valid.";
+      const firstError = parsed.error.issues[0]?.message || t("errors.invalidData");
       return { ...empty, error: firstError };
     }
 
@@ -85,7 +82,7 @@ export async function createBookingAction(
     });
 
     if (!service) {
-      return { ...empty, error: "Layanan tidak ditemukan." };
+      return { ...empty, error: t("errors.serviceNotFound") };
     }
 
     // Ambil nama klinik/bisnis dan orgId dari pemilik
@@ -157,7 +154,7 @@ export async function createBookingAction(
     if (!isSlotAvailable) {
       return {
         ...empty,
-        error: "Maaf, slot ini sudah tidak tersedia. Silakan pilih waktu lain.",
+        error: t("errors.selectedSlotUnavailable"),
       };
     }
 
@@ -260,7 +257,7 @@ export async function createBookingAction(
       if (isPrismaUniqueError) {
         return {
           ...empty,
-          error: "Slot ini baru saja dipesan oleh orang lain. Silakan pilih waktu lain.",
+          error: t("errors.slotJustBooked"),
         };
       }
       throw dbError; // Re-throw unexpected errors
@@ -268,7 +265,7 @@ export async function createBookingAction(
   } catch {
     return {
       ...empty,
-      error: "Terjadi kesalahan sistem. Silakan coba lagi.",
+      error: t("errors.systemError"),
     };
   }
 }

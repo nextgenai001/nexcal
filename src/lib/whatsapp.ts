@@ -10,8 +10,9 @@
  */
 
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as idLocale, enUS } from "date-fns/locale";
 import { prisma } from "@/lib/prisma";
+import { getLocale, getDictionary } from "@/lib/i18n/server";
 
 // ============================================================
 // Config — DB first, env fallback
@@ -123,70 +124,8 @@ interface BookingInfo {
   manageUrl?: string;
 }
 
-function formatDate(date: Date): string {
-  return format(date, "EEEE, d MMMM yyyy", { locale: id });
-}
-
-function buildBookingReceivedMessage(info: BookingInfo): string {
-  const clinic = info.clinicName || APP_NAME;
-  const lines = [
-    `✅ *Booking Diterima*`,
-    ``,
-    `Halo *${info.patientName}*,`,
-    `Booking Anda telah kami terima dan sedang menunggu konfirmasi.`,
-    ``,
-    `📋 *Detail Booking:*`,
-    `• Layanan: ${info.serviceName}`,
-    `• Tanggal: ${formatDate(info.date)}`,
-    `• Jam: ${info.startTime} (${info.duration} menit)`,
-    ``,
-    `Kami akan mengirim notifikasi setelah booking dikonfirmasi.`,
-  ];
-  if (info.manageUrl) {
-    lines.push(``, `🔗 *Kelola Booking:* ${info.manageUrl}`);
-  }
-  lines.push(``, `Terima kasih! 🙏`, `— ${clinic}`);
-  return lines.join("\n");
-}
-
-function buildBookingConfirmedMessage(info: BookingInfo): string {
-  const clinic = info.clinicName || APP_NAME;
-  const lines = [
-    `🎉 *Booking Dikonfirmasi!*`,
-    ``,
-    `Halo *${info.patientName}*,`,
-    `Booking Anda telah *dikonfirmasi*. Silakan datang sesuai jadwal berikut:`,
-    ``,
-    `📋 *Detail Booking:*`,
-    `• Layanan: ${info.serviceName}`,
-    `• Tanggal: ${formatDate(info.date)}`,
-    `• Jam: ${info.startTime} (${info.duration} menit)`,
-    ``,
-    `Mohon datang 10 menit sebelum jadwal.`,
-  ];
-  if (info.manageUrl) {
-    lines.push(``, `🔗 *Kelola Booking:* ${info.manageUrl}`);
-  }
-  lines.push(``, `Sampai jumpa! 👋`, `— ${clinic}`);
-  return lines.join("\n");
-}
-
-function buildBookingCancelledMessage(info: BookingInfo, reason?: string | null): string {
-  const clinic = info.clinicName || APP_NAME;
-  const lines = [
-    `❌ *Booking Dibatalkan*`,
-    ``,
-    `Halo *${info.patientName}*,`,
-    `Maaf, booking Anda telah dibatalkan.`,
-    ``,
-    `📋 *Detail Booking:*`,
-    `• Layanan: ${info.serviceName}`,
-    `• Tanggal: ${formatDate(info.date)}`,
-    `• Jam: ${info.startTime}`,
-  ];
-  if (reason) lines.push(``, `📝 *Alasan:* ${reason}`);
-  lines.push(``, `Silakan lakukan booking ulang.`, ``, `Mohon maaf. 🙏`, `— ${clinic}`);
-  return lines.join("\n");
+function formatDate(date: Date, locale: string): string {
+  return format(date, "EEEE, d MMMM yyyy", { locale: locale === "id" ? idLocale : enUS });
 }
 
 // ============================================================
@@ -194,25 +133,106 @@ function buildBookingCancelledMessage(info: BookingInfo, reason?: string | null)
 // ============================================================
 
 export function notifyBookingReceived(info: BookingInfo): void {
-  const message = buildBookingReceivedMessage(info);
   (async () => {
-    const config = await getConfig(info.organizationId);
-    sendWhatsApp(info.patientPhone, message, config).catch(() => {});
+    try {
+      const locale = await getLocale();
+      const dict = await getDictionary(locale);
+      const config = await getConfig(info.organizationId);
+
+      const clinic = info.clinicName || APP_NAME;
+      const dateStr = formatDate(info.date, locale);
+
+      let text = dict.notifications.receivedBody || "";
+      text = text
+        .replace(/{patientName}/g, info.patientName)
+        .replace(/{serviceName}/g, info.serviceName)
+        .replace(/{date}/g, dateStr)
+        .replace(/{time}/g, info.startTime)
+        .replace(/{duration}/g, String(info.duration));
+
+      const title = dict.notifications.receivedTitle || "Booking Received";
+      let message = `✅ *${title}*\n\n${text}`;
+      
+      if (info.manageUrl) {
+        const manageLabel = locale === "id" ? "Kelola Booking" : "Manage Booking";
+        message += `\n\n🔗 *${manageLabel}:* ${info.manageUrl}`;
+      }
+      
+      const thanksLabel = locale === "id" ? "Terima kasih! 🙏" : "Thank you! 🙏";
+      message += `\n\n${thanksLabel}\n— ${clinic}`;
+
+      sendWhatsApp(info.patientPhone, message, config).catch(() => {});
+    } catch (err) {
+      console.warn("[WhatsApp] notifyBookingReceived failed:", err);
+    }
   })();
 }
 
 export function notifyBookingConfirmed(info: BookingInfo): void {
-  const message = buildBookingConfirmedMessage(info);
   (async () => {
-    const config = await getConfig(info.organizationId);
-    sendWhatsApp(info.patientPhone, message, config).catch(() => {});
+    try {
+      const locale = await getLocale();
+      const dict = await getDictionary(locale);
+      const config = await getConfig(info.organizationId);
+
+      const clinic = info.clinicName || APP_NAME;
+      const dateStr = formatDate(info.date, locale);
+
+      let text = dict.notifications.confirmedBody || "";
+      text = text
+        .replace(/{patientName}/g, info.patientName)
+        .replace(/{serviceName}/g, info.serviceName)
+        .replace(/{date}/g, dateStr)
+        .replace(/{time}/g, info.startTime)
+        .replace(/{duration}/g, String(info.duration));
+
+      const title = dict.notifications.confirmedTitle || "Booking Confirmed! 🎉";
+      let message = `🎉 *${title}*\n\n${text}`;
+      
+      if (info.manageUrl) {
+        const manageLabel = locale === "id" ? "Kelola Booking" : "Manage Booking";
+        message += `\n\n🔗 *${manageLabel}:* ${info.manageUrl}`;
+      }
+      
+      const seeYouLabel = locale === "id" ? "Sampai jumpa! 👋" : "See you! 👋";
+      message += `\n\n${seeYouLabel}\n— ${clinic}`;
+
+      sendWhatsApp(info.patientPhone, message, config).catch(() => {});
+    } catch (err) {
+      console.warn("[WhatsApp] notifyBookingConfirmed failed:", err);
+    }
   })();
 }
 
 export function notifyBookingCancelled(info: BookingInfo, reason?: string | null): void {
-  const message = buildBookingCancelledMessage(info, reason);
   (async () => {
-    const config = await getConfig(info.organizationId);
-    sendWhatsApp(info.patientPhone, message, config).catch(() => {});
+    try {
+      const locale = await getLocale();
+      const dict = await getDictionary(locale);
+      const config = await getConfig(info.organizationId);
+
+      const clinic = info.clinicName || APP_NAME;
+      const dateStr = formatDate(info.date, locale);
+
+      let text = dict.notifications.cancelledBody || "";
+      const reasonText = reason ? (locale === "id" ? `📝 *Alasan:* ${reason}\n\n` : `📝 *Reason:* ${reason}\n\n`) : "";
+      
+      text = text
+        .replace(/{patientName}/g, info.patientName)
+        .replace(/{serviceName}/g, info.serviceName)
+        .replace(/{date}/g, dateStr)
+        .replace(/{time}/g, info.startTime)
+        .replace(/{reasonText}/g, reasonText);
+
+      const title = dict.notifications.cancelledTitle || "Booking Cancelled";
+      let message = `❌ *${title}*\n\n${text}`;
+      
+      const sorryLabel = locale === "id" ? "Mohon maaf. 🙏" : "We apologize. 🙏";
+      message += `\n\n${sorryLabel}\n— ${clinic}`;
+
+      sendWhatsApp(info.patientPhone, message, config).catch(() => {});
+    } catch (err) {
+      console.warn("[WhatsApp] notifyBookingCancelled failed:", err);
+    }
   })();
 }

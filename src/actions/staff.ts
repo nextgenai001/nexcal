@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { getTranslator } from "@/lib/i18n/server";
 
 // ============================================================
 // Get Staff Members (OWNER only)
@@ -34,12 +35,6 @@ export async function getStaffMembers() {
 // Create Staff (OWNER only)
 // ============================================================
 
-const createStaffSchema = z.object({
-  name: z.string().min(2, "Nama minimal 2 karakter.").max(100),
-  email: z.string().email("Format email tidak valid."),
-  password: z.string().min(6, "Password minimal 6 karakter."),
-});
-
 export interface CreateStaffResult {
   success: boolean;
   error: string | null;
@@ -49,14 +44,15 @@ export async function createStaffAction(
   _prevState: CreateStaffResult,
   formData: FormData
 ): Promise<CreateStaffResult> {
+  const { t } = await getTranslator();
   const session = await auth();
   if (!session?.user?.id || session.user.role !== "OWNER") {
-    return { success: false, error: "Unauthorized — hanya OWNER yang dapat menambah staf." };
+    return { success: false, error: t("errors.unauthorizedOwnerOnly") };
   }
 
   const orgId = session.user.organizationId;
   if (!orgId) {
-    return { success: false, error: "Anda belum terhubung ke organisasi." };
+    return { success: false, error: t("errors.notConnectedToOrg") };
   }
 
   const raw = {
@@ -65,9 +61,15 @@ export async function createStaffAction(
     password: formData.get("password") as string,
   };
 
+  const createStaffSchema = z.object({
+    name: z.string().min(2, t("errors.nameMin")).max(100),
+    email: z.string().email(t("errors.invalidEmail")),
+    password: z.string().min(6, t("errors.passwordMin")),
+  });
+
   const parsed = createStaffSchema.safeParse(raw);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message || "Data tidak valid." };
+    return { success: false, error: parsed.error.issues[0]?.message || t("errors.invalidData") };
   }
 
   const { name, email, password } = parsed.data;
@@ -78,7 +80,7 @@ export async function createStaffAction(
     select: { id: true },
   });
   if (existing) {
-    return { success: false, error: "Email sudah terdaftar." };
+    return { success: false, error: t("errors.emailAlreadyRegistered") };
   }
 
   const hashedPassword = await hash(password, 10);
@@ -108,24 +110,18 @@ export async function createStaffAction(
 // Update Staff (OWNER only) — name, email, role
 // ============================================================
 
-const updateStaffSchema = z.object({
-  name: z.string().min(2, "Nama minimal 2 karakter.").max(100),
-  email: z.string().email("Format email tidak valid."),
-  role: z.enum(["OWNER", "STAFF"], { message: "Role harus OWNER atau STAFF." }),
-  password: z.string().min(6, "Password minimal 6 karakter.").optional().or(z.literal("")),
-});
-
 export async function updateStaffAction(
   staffId: string,
   formData: FormData
 ): Promise<CreateStaffResult> {
+  const { t } = await getTranslator();
   const session = await auth();
   if (!session?.user?.id || session.user.role !== "OWNER") {
-    return { success: false, error: "Unauthorized" };
+    return { success: false, error: t("errors.unauthorized") };
   }
 
   const orgId = session.user.organizationId;
-  if (!orgId) return { success: false, error: "Organisasi tidak ditemukan." };
+  if (!orgId) return { success: false, error: t("errors.orgNotFound") };
 
   const raw = {
     name: formData.get("name") as string,
@@ -134,16 +130,23 @@ export async function updateStaffAction(
     password: (formData.get("password") as string) || "",
   };
 
+  const updateStaffSchema = z.object({
+    name: z.string().min(2, t("errors.nameMin")).max(100),
+    email: z.string().email(t("errors.invalidEmail")),
+    role: z.enum(["OWNER", "STAFF"], { message: t("errors.invalidRole") }),
+    password: z.string().min(6, t("errors.passwordMin")).optional().or(z.literal("")),
+  });
+
   const parsed = updateStaffSchema.safeParse(raw);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message || "Data tidak valid." };
+    return { success: false, error: parsed.error.issues[0]?.message || t("errors.invalidData") };
   }
 
   // Verify staff belongs to this org
   const staff = await prisma.user.findFirst({
     where: { id: staffId, organizationId: orgId },
   });
-  if (!staff) return { success: false, error: "Staf tidak ditemukan." };
+  if (!staff) return { success: false, error: t("errors.staffNotFound") };
 
   // Check email conflict (if changed)
   if (parsed.data.email !== staff.email) {
@@ -152,13 +155,13 @@ export async function updateStaffAction(
       select: { id: true },
     });
     if (existing) {
-      return { success: false, error: "Email sudah digunakan oleh user lain." };
+      return { success: false, error: t("errors.emailInUse") };
     }
   }
 
   // Prevent demoting yourself
   if (staffId === session.user.id && parsed.data.role === "STAFF") {
-    return { success: false, error: "Anda tidak dapat menurunkan role Anda sendiri." };
+    return { success: false, error: t("errors.cannotDemoteSelf") };
   }
 
   // Build update data
@@ -187,26 +190,27 @@ export async function updateStaffAction(
 // ============================================================
 
 export async function deleteStaffAction(staffId: string): Promise<CreateStaffResult> {
+  const { t } = await getTranslator();
   const session = await auth();
   if (!session?.user?.id || session.user.role !== "OWNER") {
-    return { success: false, error: "Unauthorized" };
+    return { success: false, error: t("errors.unauthorized") };
   }
 
   const orgId = session.user.organizationId;
-  if (!orgId) return { success: false, error: "Organisasi tidak ditemukan." };
+  if (!orgId) return { success: false, error: t("errors.orgNotFound") };
 
   // Verify staff belongs to this org + not self
   const staff = await prisma.user.findFirst({
     where: { id: staffId, organizationId: orgId },
   });
-  if (!staff) return { success: false, error: "Staf tidak ditemukan." };
+  if (!staff) return { success: false, error: t("errors.staffNotFound") };
 
   if (staffId === session.user.id) {
-    return { success: false, error: "Anda tidak dapat menghapus akun sendiri." };
+    return { success: false, error: t("errors.cannotDeleteSelf") };
   }
 
   if (staff.role === "OWNER") {
-    return { success: false, error: "Tidak dapat menghapus akun OWNER." };
+    return { success: false, error: t("errors.cannotDeleteOwner") };
   }
 
   await prisma.user.delete({ where: { id: staffId } });

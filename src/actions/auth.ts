@@ -2,6 +2,7 @@
 
 import { signIn, signOut } from "@/lib/auth";
 import { AuthError } from "next-auth";
+import { getTranslator } from "@/lib/i18n/server";
 
 export async function loginAction(
   _prevState: { error: string | null; success: boolean },
@@ -17,15 +18,16 @@ export async function loginAction(
     return { error: null, success: true };
   } catch (error) {
     if (error instanceof AuthError) {
+      const { t } = await getTranslator();
       switch (error.type) {
         case "CredentialsSignin":
           return {
-            error: "Email atau password salah. Silakan coba lagi.",
+            error: t("auth.errorIncorrect"),
             success: false,
           };
         default:
           return {
-            error: "Terjadi kesalahan saat login. Silakan coba lagi.",
+            error: t("auth.errorSystem"),
             success: false,
           };
       }

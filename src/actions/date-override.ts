@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getDataScope } from "@/lib/rbac";
+import { getTranslator } from "@/lib/i18n/server";
 
 // ============================================================
 // Schemas
@@ -29,10 +30,11 @@ export async function createDateOverrideAction(
   _prevState: { error: string | null; success: boolean },
   formData: FormData
 ): Promise<{ error: string | null; success: boolean }> {
+  const { t } = await getTranslator();
   try {
     const scope = await getDataScope();
     if (!scope) {
-      return { error: "Unauthorized", success: false };
+      return { error: t("errors.unauthorized"), success: false };
     }
 
     const isBlocked = formData.get("isBlocked") === "true";
@@ -46,7 +48,7 @@ export async function createDateOverrideAction(
     });
 
     if (!parsed.success) {
-      return { error: "Data tidak valid. Periksa kembali input Anda.", success: false };
+      return { error: t("errors.invalidDataCheckInput"), success: false };
     }
 
     const { date, startTime, endTime, reason } = parsed.data;
@@ -54,7 +56,7 @@ export async function createDateOverrideAction(
     // Validasi jam jika bukan blocked
     if (!isBlocked && startTime && endTime && startTime >= endTime) {
       return {
-        error: "Jam selesai harus setelah jam mulai.",
+        error: t("errors.endTimeAfterStartTime"),
         success: false,
       };
     }
@@ -94,7 +96,7 @@ export async function createDateOverrideAction(
     revalidatePath("/admin/schedule");
     return { error: null, success: true };
   } catch {
-    return { error: "Gagal menyimpan override. Silakan coba lagi.", success: false };
+    return { error: t("errors.overrideSaveFailed"), success: false };
   }
 }
 

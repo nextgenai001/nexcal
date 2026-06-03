@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { getTranslator } from "@/lib/i18n/server";
 
 // ============================================================
 // Schemas
@@ -35,10 +36,11 @@ export async function saveScheduleAction(
   _prevState: { error: string | null; success: boolean },
   formData: FormData
 ): Promise<{ error: string | null; success: boolean }> {
+  const { t } = await getTranslator();
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { error: "Unauthorized", success: false };
+      return { error: t("errors.unauthorized"), success: false };
     }
 
     const userId = session.user.id;
@@ -47,7 +49,7 @@ export async function saveScheduleAction(
     const parsed = bulkScheduleSchema.safeParse(JSON.parse(raw));
 
     if (!parsed.success) {
-      return { error: "Data jadwal tidak valid.", success: false };
+      return { error: t("errors.invalidScheduleData"), success: false };
     }
 
     const { sessions } = parsed.data;
@@ -56,7 +58,7 @@ export async function saveScheduleAction(
     for (const s of sessions) {
       if (s.startTime >= s.endTime) {
         return {
-          error: `Jam selesai harus setelah jam mulai (${s.startTime} - ${s.endTime}).`,
+          error: t("errors.endTimeAfterStartTimeWithTime", { start: s.startTime, end: s.endTime }),
           success: false,
         };
       }
@@ -85,7 +87,7 @@ export async function saveScheduleAction(
     revalidatePath("/admin/schedule");
     return { error: null, success: true };
   } catch {
-    return { error: "Gagal menyimpan jadwal. Silakan coba lagi.", success: false };
+    return { error: t("errors.scheduleSaveFailed"), success: false };
   }
 }
 

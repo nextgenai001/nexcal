@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { getLocale, getDictionary } from "@/lib/i18n/server";
+import { I18nProvider } from "@/lib/i18n/provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -15,17 +17,24 @@ export const metadata: Metadata = {
     template: `%s — ${appName}`,
   },
   description:
-    "Sistem reservasi dan manajemen antrean self-hosted untuk berbagai jenis bisnis.",
+    "Self-hosted booking and queue management system for various businesses.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const dictionary = await getDictionary(locale);
+
   return (
-    <html lang="id">
-      <body className={`${inter.variable} font-sans antialiased`}>{children}</body>
+    <html lang={locale}>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <I18nProvider locale={locale} dictionary={dictionary}>
+          {children}
+        </I18nProvider>
+      </body>
     </html>
   );
 }
