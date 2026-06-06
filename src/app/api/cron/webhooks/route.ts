@@ -93,6 +93,23 @@ export async function GET(request: Request) {
 
     await Promise.allSettled(promises);
 
+    // Dynamic Error Logs Auto-Pruning
+    try {
+      const setting = await prisma.systemSetting.findUnique({
+        where: { key: 'error_log_retention_days' }
+      });
+      const days = setting ? parseInt(setting.value, 10) : 30;
+      const thresholdDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      
+      await prisma.errorLog.deleteMany({
+        where: {
+          createdAt: { lt: thresholdDate }
+        }
+      });
+    } catch (cleanupError) {
+      console.error('Failed to cleanup old error logs in cron:', cleanupError);
+    }
+
     return NextResponse.json({ 
       message: 'Retry process completed', 
       processed: failedDeliveries.length 

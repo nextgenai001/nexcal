@@ -8,10 +8,21 @@ import {
   type ActionResult,
 } from "@/actions/admin-users";
 import { format } from "date-fns";
+import Link from "next/link";
 
 import TimezoneCombobox from "@/components/ui/TimezoneCombobox";
 
 // ── Types ────────────────────────────────────────────────────────────────────
+
+interface ErrorLogItem {
+  id: string;
+  message: string;
+  stack: string | null;
+  path: string | null;
+  component: string;
+  metadata: any;
+  createdAt: string;
+}
 
 interface TenantData {
   id: string;
@@ -26,6 +37,7 @@ interface TenantData {
   eventTypeCount: number;
   lastBookingAt: string | null;
   embedViews: number;
+  errorLogs: ErrorLogItem[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -49,6 +61,67 @@ function AlertBanner({ type, message }: { type: "error" | "success"; message: st
         </svg>
       )}
       {message}
+    </div>
+  );
+}
+
+function TenantErrorCard({ log }: { log: ErrorLogItem }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3.5 space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase
+              ${log.component === 'CLIENT' ? 'bg-sky-500/10 text-sky-400' : ''}
+              ${log.component === 'SERVER' ? 'bg-rose-500/10 text-rose-400' : ''}
+              ${log.component === 'API' ? 'bg-amber-500/10 text-amber-400' : ''}
+            `}>
+              {log.component}
+            </span>
+            {log.path && (
+              <code className="text-[10px] text-slate-500 font-mono truncate max-w-xs">{log.path}</code>
+            )}
+          </div>
+          <p className="text-xs text-slate-300 font-medium mt-1.5 line-clamp-2">{log.message}</p>
+        </div>
+        <time className="shrink-0 text-[10px] text-slate-600">
+          {format(new Date(log.createdAt), "MMM d, HH:mm")}
+        </time>
+      </div>
+
+      {(log.stack || Object.keys(log.metadata || {}).length > 0) && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="text-[10px] font-semibold text-slate-500 hover:text-slate-300"
+          >
+            {expanded ? "Hide Details" : "View Details"}
+          </button>
+          
+          {expanded && (
+            <div className="mt-2 space-y-2 border-t border-slate-800/80 pt-2">
+              {log.stack && (
+                <div>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Stack Trace:</p>
+                  <pre className="max-h-40 overflow-y-auto overflow-x-auto rounded bg-slate-950 p-2 font-mono text-[10px] text-red-300 leading-normal scrollbar-thin">
+                    <code>{log.stack}</code>
+                  </pre>
+                </div>
+              )}
+              {Object.keys(log.metadata || {}).length > 0 && (
+                <div>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Metadata:</p>
+                  <pre className="overflow-x-auto rounded bg-slate-950 p-2 font-mono text-[10px] text-slate-400">
+                    <code>{JSON.stringify(log.metadata, null, 2)}</code>
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -197,6 +270,29 @@ export default function EditTenantClient({ tenant }: { tenant: TenantData }) {
             {isPwPending ? "Updating…" : "Reset"}
           </button>
         </form>
+      </div>
+
+      {/* ── Errors Logged ──────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Errors Logged ({tenant.errorLogs.length})</h2>
+            <p className="text-xs text-slate-500">Most recent exceptions caught for this tenant</p>
+          </div>
+          <Link href="/admin/errors" className="text-xs text-indigo-400 hover:text-indigo-300">
+            View All →
+          </Link>
+        </div>
+
+        {tenant.errorLogs.length === 0 ? (
+          <p className="text-xs text-slate-500 py-2">No errors logged for this tenant.</p>
+        ) : (
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-1 scrollbar-thin">
+            {tenant.errorLogs.map((log) => (
+              <TenantErrorCard key={log.id} log={log} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Danger zone ───────────────────────────────────────────────── */}

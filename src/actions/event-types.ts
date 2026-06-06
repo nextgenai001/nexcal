@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
+import { logErrorAction } from "@/actions/errors";
 
 export async function toggleEventTypeAction(id: string, isActive: boolean) {
   const user = await requireTenant();
@@ -64,6 +65,7 @@ export async function createEventTypeAction(prevState: any, formData: FormData) 
     revalidatePath("/user/events");
     return { success: true, error: null };
   } catch (error: any) {
+    await logErrorAction(error.message, error.stack, "/user/events/new", "SERVER", { action: "createEventTypeAction" });
     return { success: false, error: error.message };
   }
 }
@@ -107,6 +109,7 @@ export async function updateEventTypeAction(id: string, prevState: any, formData
     revalidatePath("/user/events");
     return { success: true, error: null };
   } catch (error: any) {
+    await logErrorAction(error.message, error.stack, "/user/events/edit", "SERVER", { action: "updateEventTypeAction" });
     return { success: false, error: error.message };
   }
 }

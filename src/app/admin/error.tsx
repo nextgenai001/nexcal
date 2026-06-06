@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { logErrorAction } from "@/actions/errors";
 
 export default function AdminError({
   error,
@@ -12,6 +13,13 @@ export default function AdminError({
 }) {
   useEffect(() => {
     console.error("[AdminError]", error);
+    logErrorAction(
+      error.message || "Unknown admin layout error",
+      error.stack,
+      typeof window !== "undefined" ? window.location.pathname : undefined,
+      "CLIENT",
+      { digest: error.digest }
+    );
   }, [error]);
 
   return (

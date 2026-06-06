@@ -58,6 +58,7 @@ model User {
   webhookEndpoints  WebhookEndpoint[]
   actorAuditLogs    AuditLog[]        @relation("ActorLogs")
   targetAuditLogs   AuditLog[]        @relation("TargetLogs")
+  errorLogs         ErrorLog[]
 
   @@map("users")
 }
@@ -225,4 +226,32 @@ model AuditLog {
 
   @@index([action, createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================
+// MODEL: ErrorLog
+// ============================================================
+model ErrorLog {
+  id         String   @id @default(cuid())
+  message    String
+  stack      String?
+  path       String?
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  component  String   // "CLIENT" | "SERVER" | "API"
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("error_logs")
+}
+
+// ============================================================
+// MODEL: SystemSetting
+// ============================================================
+model SystemSetting {
+  key   String @id
+  value String
+
+  @@map("system_settings")
 }

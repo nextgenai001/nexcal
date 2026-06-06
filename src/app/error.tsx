@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n/provider";
+import { logErrorAction } from "@/actions/errors";
 
 export default function RootError({
   error,
@@ -14,6 +15,13 @@ export default function RootError({
 
   useEffect(() => {
     console.error("[RootError]", error);
+    logErrorAction(
+      error.message || "Unknown root layout error",
+      error.stack,
+      typeof window !== "undefined" ? window.location.pathname : undefined,
+      "CLIENT",
+      { digest: error.digest }
+    );
   }, [error]);
 
   return (

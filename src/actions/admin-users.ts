@@ -14,6 +14,7 @@ import { requireAdmin } from "@/lib/rbac";
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { logErrorAction } from "@/actions/errors";
 
 // ── Zod schemas ─────────────────────────────────────────────────────────────
 
@@ -141,8 +142,9 @@ export async function createTenantAction(
     revalidatePath("/admin/users");
 
     return { data: { userId: user.id } };
-  } catch (err) {
+  } catch (err: any) {
     console.error("[createTenantAction]", err);
+    await logErrorAction(err?.message || "Failed to create tenant", err?.stack, "/admin/users/new", "SERVER", { action: "createTenantAction" });
     return { error: "Failed to create tenant. Please try again." };
   }
 }
@@ -210,8 +212,9 @@ export async function updateTenantAction(
     revalidatePath("/admin/users");
 
     return {};
-  } catch (err) {
+  } catch (err: any) {
     console.error("[updateTenantAction]", err);
+    await logErrorAction(err?.message || "Failed to update tenant", err?.stack, `/admin/users/${tenantId}`, "SERVER", { action: "updateTenantAction", tenantId });
     return { error: "Failed to update tenant. Please try again." };
   }
 }
@@ -256,8 +259,9 @@ export async function resetTenantPasswordAction(
     });
 
     return {};
-  } catch (err) {
+  } catch (err: any) {
     console.error("[resetTenantPasswordAction]", err);
+    await logErrorAction(err?.message || "Failed to reset password", err?.stack, `/admin/users/${tenantId}`, "SERVER", { action: "resetTenantPasswordAction", tenantId });
     return { error: "Failed to reset password. Please try again." };
   }
 }
@@ -296,8 +300,9 @@ export async function toggleTenantActiveAction(
     revalidatePath("/admin/users");
 
     return { data: { isActive: newActive } };
-  } catch (err) {
+  } catch (err: any) {
     console.error("[toggleTenantActiveAction]", err);
+    await logErrorAction(err?.message || "Failed to toggle active status", err?.stack, `/admin/users/${tenantId}`, "SERVER", { action: "toggleTenantActiveAction", tenantId });
     return { error: "Failed to update tenant status. Please try again." };
   }
 }

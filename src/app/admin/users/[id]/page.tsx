@@ -40,6 +40,13 @@ export default async function EditTenantPage({ params }: PageProps) {
     select: { startTime: true },
   });
 
+  // Get user's error logs (up to 100 most recent)
+  const errorLogs = await prisma.errorLog.findMany({
+    where: { userId: id },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
   const tenantData = {
     id: user.id,
     name: user.name,
@@ -53,6 +60,15 @@ export default async function EditTenantPage({ params }: PageProps) {
     eventTypeCount: user._count.eventTypes,
     lastBookingAt: lastBooking?.startTime.toISOString() ?? null,
     embedViews: user.embedViews,
+    errorLogs: errorLogs.map(log => ({
+      id: log.id,
+      message: log.message,
+      stack: log.stack,
+      path: log.path,
+      component: log.component,
+      metadata: log.metadata,
+      createdAt: log.createdAt.toISOString(),
+    })),
   };
 
   return (

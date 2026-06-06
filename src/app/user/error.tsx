@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logErrorAction } from "@/actions/errors";
 
 export default function Error({
   error,
@@ -11,6 +12,13 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error(error);
+    logErrorAction(
+      error.message || "Unknown tenant layout error",
+      error.stack,
+      typeof window !== "undefined" ? window.location.pathname : undefined,
+      "CLIENT",
+      { digest: error.digest }
+    );
   }, [error]);
 
   return (

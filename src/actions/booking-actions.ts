@@ -5,6 +5,7 @@ import { requireTenant } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
 import { BookingStatus } from "@prisma/client";
 import { dispatchWebhookEvent } from "@/lib/webhooks/dispatcher";
+import { logErrorAction } from "@/actions/errors";
 
 export async function createManualBookingAction(prevState: any, formData: FormData) {
   try {
@@ -50,6 +51,7 @@ export async function createManualBookingAction(prevState: any, formData: FormDa
     revalidatePath("/user/bookings");
     return { success: true, error: null };
   } catch (error: any) {
+    await logErrorAction(error.message, error.stack, "/user/bookings/new", "SERVER", { action: "createManualBookingAction" });
     return { success: false, error: error.message };
   }
 }
@@ -75,6 +77,7 @@ export async function updateBookingStatusAction(id: string, status: BookingStatu
     revalidatePath("/user/bookings");
     return { success: true, error: null };
   } catch (error: any) {
+    await logErrorAction(error.message, error.stack, `/user/bookings/${id}`, "SERVER", { action: "updateBookingStatusAction", bookingId: id, status });
     return { success: false, error: error.message };
   }
 }
@@ -91,6 +94,7 @@ export async function updateBookingNotesAction(id: string, notes: string) {
     revalidatePath(`/user/bookings/${id}`);
     return { success: true, error: null };
   } catch (error: any) {
+    await logErrorAction(error.message, error.stack, `/user/bookings/${id}`, "SERVER", { action: "updateBookingNotesAction", bookingId: id });
     return { success: false, error: error.message };
   }
 }
@@ -113,6 +117,7 @@ export async function cancelBookingAction(id: string, cancelReason: string) {
     revalidatePath("/user/bookings");
     return { success: true, error: null };
   } catch (error: any) {
+    await logErrorAction(error.message, error.stack, `/user/bookings/${id}`, "SERVER", { action: "cancelBookingAction", bookingId: id });
     return { success: false, error: error.message };
   }
 }
