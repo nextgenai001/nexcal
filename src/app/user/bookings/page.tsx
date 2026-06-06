@@ -7,11 +7,12 @@ export const metadata = {
   title: "Bookings - NexCal",
 };
 
-export default async function BookingsPage({ searchParams }: { searchParams: { status?: string, q?: string } }) {
+export default async function BookingsPage({ searchParams }: { searchParams: Promise<{ status?: string, q?: string }> }) {
   const user = await requireTenant();
+  const resolvedParams = await searchParams;
   
-  const status = searchParams.status || "ALL";
-  const q = searchParams.q || "";
+  const status = resolvedParams.status || "ALL";
+  const q = resolvedParams.q || "";
 
   const where: any = { userId: user.id };
   
