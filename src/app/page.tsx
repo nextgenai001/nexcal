@@ -1,8 +1,22 @@
-import { getProviders } from "@/actions/slots";
-import { BookingWizard } from "@/components/booking/booking-wizard";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default async function BookingPage() {
-  const providers = await getProviders();
+/**
+ * NexCal v3.0 — Root page.
+ * Server component that redirects all visitors based on auth state:
+ *   PLATFORM_ADMIN → /admin/dashboard
+ *   TENANT         → /user/dashboard
+ *   Unauthenticated → /login
+ */
+export default async function RootPage() {
+  const session = await auth();
 
-  return <BookingWizard providers={providers} />;
+  if (session?.user) {
+    if (session.user.role === "PLATFORM_ADMIN") {
+      redirect("/admin/dashboard");
+    }
+    redirect("/user/dashboard");
+  }
+
+  redirect("/login");
 }

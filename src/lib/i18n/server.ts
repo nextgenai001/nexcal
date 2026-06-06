@@ -1,17 +1,19 @@
 import { cookies } from "next/headers";
 import en from "./locales/en.json";
-import id from "./locales/id.json";
 
+// NexCal v3.0 — English-only i18n. Indonesian locale removed.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const dictionaries: Record<string, any> = { en, id };
+const dictionaries: Record<string, any> = { en };
 
 export async function getLocale() {
   const cookieStore = await cookies();
-  return cookieStore.get("NEXT_LOCALE")?.value || "en";
+  // Always return "en" — only English is supported in v3.0
+  const locale = cookieStore.get("NEXT_LOCALE")?.value ?? "en";
+  return locale in dictionaries ? locale : "en";
 }
 
 export async function getDictionary(locale: string) {
-  return dictionaries[locale] || dictionaries.en;
+  return dictionaries[locale] ?? dictionaries.en;
 }
 
 export async function setLocaleAction(locale: string) {

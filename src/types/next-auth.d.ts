@@ -1,28 +1,34 @@
-import { DefaultSession, DefaultUser } from "next-auth";
-import { DefaultJWT } from "next-auth/jwt";
+import type { DefaultSession, DefaultUser } from "next-auth";
+import type { DefaultJWT } from "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: string;
-      clinicName: string;
-      organizationId: string | null;
+      username: string;
+      role: "PLATFORM_ADMIN" | "TENANT";
+      businessName: string | null;
+      timezone: string;
+      isActive: boolean;
     } & DefaultSession["user"];
   }
 
   interface User extends DefaultUser {
-    role: string;
-    clinicName: string | null;
-    organizationId: string | null;
+    username: string;
+    role: "PLATFORM_ADMIN" | "TENANT";
+    businessName: string | null;
+    timezone: string;
+    isActive: boolean;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
-    role: string;
-    clinicName: string;
-    organizationId: string | null;
+    username: string;
+    role: "PLATFORM_ADMIN" | "TENANT";
+    businessName: string | null;
+    timezone: string;
+    isActive: boolean;
   }
 }

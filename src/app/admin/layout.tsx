@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { AdminSidebar } from "@/components/admin/sidebar";
+import { requireAdmin } from "@/lib/rbac";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
 
-const appName = process.env.NEXT_PUBLIC_APP_NAME || "OpenSlot";
+const appName = process.env.NEXT_PUBLIC_APP_NAME ?? "NexCal";
 
 export const metadata: Metadata = {
   title: {
-    default: `Dashboard — ${appName}`,
+    default: `Dashboard — ${appName} Admin`,
     template: `%s — ${appName} Admin`,
   },
-  description: `Panel administrasi ${appName}`,
+  description: `${appName} platform administration panel`,
 };
 
 export default async function AdminLayout({
@@ -18,20 +18,24 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
+  // Role-gate: redirects to /login or /unauthorized if not PLATFORM_ADMIN
+  const user = await requireAdmin();
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
-      <AdminSidebar user={session.user} />
-      <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="flex h-screen bg-slate-950 text-white">
+      {/* Sidebar */}
+      <AdminSidebar />
+
+      {/* Main content area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top bar */}
+        <AdminHeader user={user} />
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

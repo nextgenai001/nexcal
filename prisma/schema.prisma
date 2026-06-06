@@ -1,6 +1,5 @@
 // prisma/schema.prisma
-// NexCal v2.0 — Multi-Provider Booking System
-// Supports Organizations with multiple Providers (Staff)
+// NexCal v3.0 — Multi-Tenant SaaS Booking Platform
 
 generator client {
   provider = "prisma-client-js"
@@ -11,184 +10,12 @@ datasource db {
 }
 
 // ============================================================
-// MODEL: Organization (Bisnis / Klinik / Studio)
+// ENUMS
 // ============================================================
-// Entitas induk yang menaungi semua staf dan layanan.
-model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique  // URL-friendly: "barbershop-jaya"
-  logoUrl   String?  @map("logo_url")
-
-  // Integration: MultiWA (WhatsApp Gateway)
-  multiwaUrl       String?  @map("multiwa_url")
-  multiwaApiKey    String?  @map("multiwa_api_key")
-  multiwaSessionId String?  @map("multiwa_session_id")
-
-  // Integration: Google Calendar OAuth
-  gcalClientId     String?  @map("gcal_client_id")
-  gcalClientSecret String?  @map("gcal_client_secret")
-
-  // Integration: Midtrans Payment Gateway
-  midtransServerKey  String?  @map("midtrans_server_key")
-  midtransClientKey  String?  @map("midtrans_client_key")
-  midtransIsProd     Boolean  @default(false) @map("midtrans_is_prod")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  members User[]
-
-  @@map("organizations")
-}
-
-// ============================================================
-// MODEL: User (Owner / Staff Provider)
-// ============================================================
-// OWNER: melihat semua data organisasi, manage semua staf
-// STAFF: hanya melihat & mengelola data sendiri
-model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  hashedPassword String   @map("hashed_password")
-  name           String
-  role           Role     @default(STAFF)
-  clinicName     String?  @map("clinic_name")
-  clinicAddress  String?  @map("clinic_address")
-  phone          String?
-
-  // Organization
-  organizationId String?       @map("organization_id")
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-
-  // Google Calendar Integration (OAuth 2.0)
-  googleAccessToken  String?  @map("google_access_token")
-  googleRefreshToken String?  @map("google_refresh_token")
-  googleTokenExpiry  DateTime? @map("google_token_expiry")
-
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  schedules     Schedule[]
-  dateOverrides DateOverride[]
-  bookings      Booking[]
-  serviceTypes  ServiceType[]
-
-  @@map("users")
-}
 
 enum Role {
-  OWNER
-  STAFF
-}
-
-// ============================================================
-// MODEL: ServiceType (Jenis Layanan)
-// ============================================================
-// Jenis layanan yang ditawarkan, menentukan durasi slot.
-model ServiceType {
-  id            String  @id @default(cuid())
-  name          String
-  duration      Int     // Durasi dalam menit (15, 30, 45, 60)
-  bufferTime    Int     @default(0) @map("buffer_time") // Jeda setelah layanan (menit)
-  price         Int     @default(0) // Harga layanan (Rupiah). 0 = gratis
-  dpPercentage  Int     @default(0) @map("dp_percentage") // Persentase DP (0-100). 0 = bayar penuh
-  description   String?
-  isActive      Boolean @default(true) @map("is_active")
-  isVirtual     Boolean @default(false) @map("is_virtual") // Konsultasi online → auto Google Meet
-  color         String? // Warna hex untuk kalender UI
-
-  // Relations
-  userId   String    @map("user_id")
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings Booking[]
-
-  @@map("service_types")
-}
-
-// ============================================================
-// MODEL: Schedule (Jam Operasional Mingguan)
-// ============================================================
-// Mengatur ketersediaan provider per hari dalam seminggu.
-model Schedule {
-  id        String  @id @default(cuid())
-  dayOfWeek Int     @map("day_of_week") // 0=Minggu, 1=Senin, ..., 6=Sabtu
-  startTime String  @map("start_time")  // Format "HH:mm" -> "08:00"
-  endTime   String  @map("end_time")    // Format "HH:mm" -> "12:00"
-  isActive  Boolean @default(true) @map("is_active")
-
-  // Relations
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Cegah duplikasi sesi pada hari & waktu yang sama
-  @@unique([userId, dayOfWeek, startTime])
-  @@map("schedules")
-}
-
-// ============================================================
-// MODEL: DateOverride (Override Tanggal Spesifik)
-// ============================================================
-model DateOverride {
-  id        String   @id @default(cuid())
-  date      DateTime @db.Date
-  isBlocked Boolean  @default(true) @map("is_blocked")
-  startTime String?  @map("start_time")
-  endTime   String?  @map("end_time")
-  reason    String?
-
-  // Relations
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, date])
-  @@map("date_overrides")
-}
-
-// ============================================================
-// MODEL: Booking (Reservasi)
-// ============================================================
-model Booking {
-  id              String        @id @default(cuid())
-  status          BookingStatus @default(PENDING)
-  date            DateTime      @db.Date
-  startTime       DateTime      @map("start_time")
-  endTime         DateTime      @map("end_time")
-
-  // Data Pelanggan
-  patientName     String        @map("patient_name")
-  patientPhone    String        @map("patient_phone")
-  patientNotes    String?       @map("patient_notes")
-
-  // Payment (Gateway-Agnostic)
-  paymentStatus   PaymentStatus @default(UNPAID) @map("payment_status")
-  totalPrice      Int           @default(0) @map("total_price")       // Jumlah yang harus dibayar (Rupiah)
-  dpAmount        Int           @default(0) @map("dp_amount")         // Jumlah DP (Rupiah)
-  paymentGateway  String?       @map("payment_gateway")              // 'MIDTRANS', 'XENDIT', dll
-  paymentRefId    String?       @map("payment_ref_id")               // Token/Order ID dari gateway
-  paymentUrl      String?       @map("payment_url")                  // Redirect URL pembayaran
-
-  // Metadata
-  cancelReason    String?       @map("cancel_reason")
-  managementToken String        @unique @default(uuid()) @map("management_token")
-  meetingUrl      String?       @map("meeting_url")
-  rescheduleCount Int           @default(0) @map("reschedule_count")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-
-  // Relations
-  userId        String      @map("user_id")
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  serviceTypeId String      @map("service_type_id")
-  serviceType   ServiceType @relation(fields: [serviceTypeId], references: [id])
-
-  // Double-booking dicegah di level aplikasi (Lapis 2 di createBookingAction)
-  // dengan filter status ['PENDING', 'CONFIRMED'] — bukan di level DB constraint,
-  // karena slot dari booking CANCELLED harus bisa dipakai kembali.
-  @@index([userId, date, status])
-  @@map("bookings")
+  PLATFORM_ADMIN
+  TENANT
 }
 
 enum BookingStatus {
@@ -199,9 +26,201 @@ enum BookingStatus {
   NO_SHOW
 }
 
-enum PaymentStatus {
-  UNPAID
-  PAID
-  REFUNDED
-  FAILED
+// ============================================================
+// MODEL: User
+// ============================================================
+// PLATFORM_ADMIN: can create/manage tenant accounts, monitor the platform
+// TENANT: one business — fully isolated from other tenants
+model User {
+  id             String    @id @default(cuid())
+  username       String    @unique  // URL slug → /[username]
+  email          String    @unique
+  hashedPassword String    @map("hashed_password")
+  name           String
+  role           Role      @default(TENANT)
+
+  // Business profile (TENANT only)
+  businessName   String?   @map("business_name")
+  businessLogo   String?   @map("business_logo")
+  timezone       String    @default("UTC")  // IANA: "Asia/Jakarta"
+  isActive       Boolean   @default(true)   @map("is_active")
+
+  createdAt      DateTime  @default(now())  @map("created_at")
+  updatedAt      DateTime  @updatedAt       @map("updated_at")
+
+  // Relations
+  eventTypes        EventType[]
+  schedules         Schedule[]
+  dateOverrides     DateOverride[]
+  bookings          Booking[]
+  webhookEndpoints  WebhookEndpoint[]
+  actorAuditLogs    AuditLog[]        @relation("ActorLogs")
+  targetAuditLogs   AuditLog[]        @relation("TargetLogs")
+
+  @@map("users")
+}
+
+// ============================================================
+// MODEL: EventType
+// ============================================================
+// Defines a bookable event (e.g., "30-min Demo", "1hr Consultation")
+// Custom booking form fields are stored as a JSON array
+model EventType {
+  id               String   @id @default(cuid())
+  slug             String   // URL: /[username]/[slug]
+  name             String
+  description      String?
+  duration         Int      // minutes
+  bufferTime       Int      @default(0)    @map("buffer_time")
+  color            String?  // hex color for UI
+  isActive         Boolean  @default(true) @map("is_active")
+  // JSON array of field definitions:
+  // [{ id: string, label: string, type: "text"|"email"|"phone"|"textarea"|"select", required: boolean, options?: string[] }]
+  customFields     Json     @default("[]") @map("custom_fields")
+  maxBookingsPerDay Int?    @map("max_bookings_per_day")
+
+  userId           String   @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings         Booking[]
+
+  @@unique([userId, slug])
+  @@map("event_types")
+}
+
+// ============================================================
+// MODEL: Schedule
+// ============================================================
+// Weekly availability. startTime/endTime stored in tenant's timezone as "HH:mm".
+model Schedule {
+  id        String  @id @default(cuid())
+  dayOfWeek Int     @map("day_of_week")  // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime String  @map("start_time")   // "HH:mm" in tenant's timezone
+  endTime   String  @map("end_time")     // "HH:mm" in tenant's timezone
+  isActive  Boolean @default(true)       @map("is_active")
+
+  userId    String  @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek, startTime])
+  @@map("schedules")
+}
+
+// ============================================================
+// MODEL: DateOverride
+// ============================================================
+model DateOverride {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  isBlocked Boolean  @default(true)  @map("is_blocked")
+  startTime String?  @map("start_time")
+  endTime   String?  @map("end_time")
+  reason    String?
+
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("date_overrides")
+}
+
+// ============================================================
+// MODEL: Booking
+// ============================================================
+// All times stored in UTC. Conversion happens at UI layer.
+model Booking {
+  id              String        @id @default(cuid())
+  status          BookingStatus @default(PENDING)
+  startTime       DateTime      @map("start_time")   // UTC
+  endTime         DateTime      @map("end_time")      // UTC
+
+  // Core customer fields
+  customerName    String        @map("customer_name")
+  customerEmail   String?       @map("customer_email")
+  customerPhone   String?       @map("customer_phone")
+  // Values for dynamic custom fields keyed by field id
+  customFieldData Json          @default("{}") @map("custom_field_data")
+
+  cancelReason    String?       @map("cancel_reason")
+  managementToken String        @unique @default(uuid()) @map("management_token")
+  rescheduleCount Int           @default(0)  @map("reschedule_count")
+  notes           String?       // internal notes added by tenant
+
+  userId          String        @map("user_id")       // which tenant owns this booking
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventTypeId     String        @map("event_type_id")
+  eventType       EventType     @relation(fields: [eventTypeId], references: [id])
+  webhookDeliveries WebhookDelivery[]
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt      @map("updated_at")
+
+  @@index([userId, startTime, status])
+  @@map("bookings")
+}
+
+// ============================================================
+// MODEL: WebhookEndpoint
+// ============================================================
+model WebhookEndpoint {
+  id        String   @id @default(cuid())
+  url       String
+  secret    String?  // HMAC-SHA256 signing secret (auto-generated)
+  // Subscribed events: BOOKING_CREATED | BOOKING_RESCHEDULED | BOOKING_CANCELLED | BOOKING_COMPLETED | BOOKING_NO_SHOW
+  events    String[]
+  isActive  Boolean  @default(true) @map("is_active")
+
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  @@map("webhook_endpoints")
+}
+
+// ============================================================
+// MODEL: WebhookDelivery
+// ============================================================
+// Logs every delivery attempt for observability and retry
+model WebhookDelivery {
+  id            String    @id @default(cuid())
+  event         String    // e.g. "BOOKING_CREATED"
+  payload       Json
+  status        String    @default("PENDING")  // PENDING | SUCCESS | FAILED
+  attempts      Int       @default(0)
+  nextRetryAt   DateTime? @map("next_retry_at")
+  lastAttemptAt DateTime? @map("last_attempt_at")
+  responseCode  Int?      @map("response_code")
+  responseBody  String?   @map("response_body")
+  error         String?
+
+  webhookId     String    @map("webhook_id")
+  webhook       WebhookEndpoint @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  bookingId     String?   @map("booking_id")
+  booking       Booking?  @relation(fields: [bookingId], references: [id])
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([status, nextRetryAt])
+  @@map("webhook_deliveries")
+}
+
+// ============================================================
+// MODEL: AuditLog
+// ============================================================
+// Records all significant platform actions for admin monitoring
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // "USER_CREATED" | "USER_DEACTIVATED" | "BOOKING_CANCELLED" | "WEBHOOK_FAILED" ...
+  actorId   String?  @map("actor_id")   // who performed the action
+  actor     User?    @relation("ActorLogs",  fields: [actorId],  references: [id], onDelete: SetNull)
+  targetId  String?  @map("target_id")  // who was affected (e.g. tenant being edited)
+  target    User?    @relation("TargetLogs", fields: [targetId], references: [id], onDelete: SetNull)
+  metadata  Json     @default("{}")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([action, createdAt])
+  @@map("audit_logs")
 }

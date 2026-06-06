@@ -1,427 +1,281 @@
+// prisma/seed.ts
+// NexCal v3.0 — Fresh seed for multi-tenant platform
+
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client/index.js";
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { hash } from "bcryptjs";
+import bcrypt from "bcryptjs";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🌱 Seeding NexCal v2.0 (Multi-Provider)...\n");
+  console.log("🌱 Seeding NexCal v3.0...");
 
-  // ============================================================
-  // 1. Organization
-  // ============================================================
-  const org = await prisma.organization.upsert({
-    where: { slug: "klinik-sehat-utama" },
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123456";
+  const tenant1Password = process.env.SEED_TENANT1_PASSWORD || "tenant123456";
+  const tenant2Password = process.env.SEED_TENANT2_PASSWORD || "tenant123456";
+
+  // ─── Platform Admin ────────────────────────────────────────────────────────
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@nexcal.app" },
     update: {},
     create: {
-      name: "Healthy Life Clinic",
-      slug: "klinik-sehat-utama",
+      username: "admin",
+      email: "admin@nexcal.app",
+      hashedPassword: await bcrypt.hash(adminPassword, 12),
+      name: "Platform Admin",
+      role: "PLATFORM_ADMIN",
+      timezone: "UTC",
     },
   });
-  console.log(`✅ Organization: ${org.name} (${org.slug})`);
+  console.log(`✅ Platform Admin: ${admin.email}`);
 
-  // ============================================================
-  // 2. Users: 1 OWNER + 2 STAFF
-  // ============================================================
-  const seedPassword = process.env.SEED_PASSWORD || "changeme123";
-  const hashedPassword = await hash(seedPassword, 12);
-
-  const owner = await prisma.user.upsert({
-    where: { email: "admin@kliniku.com" },
+  // ─── Demo Tenant 1: Tech Startup ────────────────────────────────────────────
+  const tenant1 = await prisma.user.upsert({
+    where: { email: "demo@acmecorp.com" },
     update: {},
     create: {
-      email: "admin@kliniku.com",
-      hashedPassword,
-      name: "Main Admin",
-      role: "OWNER",
-      clinicName: "Healthy Life Clinic",
-      clinicAddress: "1st Health Road, Batam",
-      phone: "08121234567",
-      organizationId: org.id,
+      username: "acmecorp",
+      email: "demo@acmecorp.com",
+      hashedPassword: await bcrypt.hash(tenant1Password, 12),
+      name: "Acme Corp",
+      role: "TENANT",
+      businessName: "Acme Corporation",
+      timezone: "America/New_York",
     },
   });
-  console.log(`✅ OWNER: ${owner.name} (${owner.email})`);
+  console.log(`✅ Tenant 1: ${tenant1.email} (@${tenant1.username})`);
 
-  const drBudi = await prisma.user.upsert({
-    where: { email: "dr.budi@kliniku.com" },
+  // Event types for tenant 1
+  const event1 = await prisma.eventType.upsert({
+    where: { userId_slug: { userId: tenant1.id, slug: "30-min-demo" } },
     update: {},
     create: {
-      email: "dr.budi@kliniku.com",
-      hashedPassword,
-      name: "Dr. Budi Santoso",
-      role: "STAFF",
-      clinicName: "Healthy Life Clinic",
-      phone: "08129876543",
-      organizationId: org.id,
-    },
-  });
-  console.log(`✅ STAFF: ${drBudi.name} (${drBudi.email})`);
-
-  const bidanSari = await prisma.user.upsert({
-    where: { email: "bidan.sari@kliniku.com" },
-    update: {},
-    create: {
-      email: "bidan.sari@kliniku.com",
-      hashedPassword,
-      name: "Midwife Sari Dewi",
-      role: "STAFF",
-      clinicName: "Healthy Life Clinic",
-      phone: "08131234567",
-      organizationId: org.id,
-    },
-  });
-  console.log(`✅ STAFF: ${bidanSari.name} (${bidanSari.email})`);
-
-  // ============================================================
-  // 3. Services — Different per Staff
-  // ============================================================
-
-  // Dr. Budi's services
-  const konsultasiUmum = await prisma.serviceType.upsert({
-    where: { id: "svc-konsultasi-umum" },
-    update: {},
-    create: {
-      id: "svc-konsultasi-umum",
-      name: "General Consultation",
+      userId: tenant1.id,
+      slug: "30-min-demo",
+      name: "30-Minute Product Demo",
+      description: "A quick walkthrough of our platform features.",
       duration: 30,
       bufferTime: 10,
-      price: 75000,
-      dpPercentage: 0,
-      description: "General health check-up and consultation.",
-      color: "#3B82F6",
-      userId: drBudi.id,
+      color: "#6366f1",
+      customFields: [
+        { id: "full_name", label: "Full Name", type: "text", required: true },
+        { id: "email", label: "Email Address", type: "email", required: true },
+        { id: "phone", label: "Phone Number", type: "phone", required: false },
+        { id: "company", label: "Company Name", type: "text", required: false },
+        { id: "message", label: "What would you like to discuss?", type: "textarea", required: false },
+      ],
     },
   });
 
-  const medicalCheckup = await prisma.serviceType.upsert({
-    where: { id: "svc-medical-checkup" },
+  const event2 = await prisma.eventType.upsert({
+    where: { userId_slug: { userId: tenant1.id, slug: "1hr-consultation" } },
     update: {},
     create: {
-      id: "svc-medical-checkup",
-      name: "Medical Check-up",
+      userId: tenant1.id,
+      slug: "1hr-consultation",
+      name: "1-Hour Consultation",
+      description: "Deep-dive consultation session for enterprise clients.",
       duration: 60,
       bufferTime: 15,
-      price: 350000,
-      dpPercentage: 50,
-      description: "Comprehensive health examination with details report.",
-      color: "#8B5CF6",
-      userId: drBudi.id,
+      color: "#8b5cf6",
+      customFields: [
+        { id: "full_name", label: "Full Name", type: "text", required: true },
+        { id: "email", label: "Email Address", type: "email", required: true },
+        { id: "phone", label: "Phone Number", type: "phone", required: true },
+        { id: "company", label: "Company Name", type: "text", required: true },
+        {
+          id: "team_size",
+          label: "Team Size",
+          type: "select",
+          required: false,
+          options: ["1-10", "11-50", "51-200", "200+"],
+        },
+      ],
     },
   });
 
-  console.log(`✅ Dr. Budi services: ${konsultasiUmum.name}, ${medicalCheckup.name}`);
+  // Schedules for tenant 1 (Mon-Fri, 9am-5pm ET)
+  for (const dayOfWeek of [1, 2, 3, 4, 5]) {
+    await prisma.schedule.upsert({
+      where: {
+        userId_dayOfWeek_startTime: {
+          userId: tenant1.id,
+          dayOfWeek,
+          startTime: "09:00",
+        },
+      },
+      update: {},
+      create: {
+        userId: tenant1.id,
+        dayOfWeek,
+        startTime: "09:00",
+        endTime: "17:00",
+        isActive: true,
+      },
+    });
+  }
 
-  // Bidan Sari's services
-  const pemeriksaanKehamilan = await prisma.serviceType.upsert({
-    where: { id: "svc-kehamilan" },
-    update: {},
-    create: {
-      id: "svc-kehamilan",
-      name: "Pregnancy Check-up",
-      duration: 30,
-      bufferTime: 10,
-      price: 150000,
-      dpPercentage: 0,
-      description: "Routine prenatal care including basic ultrasound.",
-      color: "#EC4899",
-      userId: bidanSari.id,
+  // Sample bookings for tenant 1
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 10:00 ET
+
+  await prisma.booking.create({
+    data: {
+      userId: tenant1.id,
+      eventTypeId: event1.id,
+      status: "CONFIRMED",
+      startTime: tomorrow,
+      endTime: new Date(tomorrow.getTime() + 30 * 60 * 1000),
+      customerName: "Sarah Johnson",
+      customerEmail: "sarah@example.com",
+      customerPhone: "+1 555-0101",
+      customFieldData: {
+        company: "TechStartup Inc",
+        message: "Interested in enterprise plan",
+      },
+      notes: "VIP lead from marketing campaign",
     },
   });
 
-  const imunisasi = await prisma.serviceType.upsert({
-    where: { id: "svc-imunisasi" },
-    update: {},
-    create: {
-      id: "svc-imunisasi",
-      name: "Child Immunization",
-      duration: 15,
-      bufferTime: 5,
-      price: 0,
-      dpPercentage: 0,
-      description: "Basic and booster immunizations for infants and toddlers.",
-      color: "#10B981",
-      userId: bidanSari.id,
-    },
-  });
+  const dayAfter = new Date();
+  dayAfter.setDate(dayAfter.getDate() + 2);
+  dayAfter.setUTCHours(16, 0, 0, 0); // 16:00 UTC = 12:00 ET
 
-  const konsultasiLaktasi = await prisma.serviceType.upsert({
-    where: { id: "svc-laktasi" },
-    update: {},
-    create: {
-      id: "svc-laktasi",
-      name: "Lactation Consultation",
-      duration: 45,
-      bufferTime: 10,
-      price: 100000,
-      dpPercentage: 0,
-      description: "Breastfeeding consultation and breast milk management.",
-      color: "#F59E0B",
-      userId: bidanSari.id,
+  await prisma.booking.create({
+    data: {
+      userId: tenant1.id,
+      eventTypeId: event2.id,
+      status: "PENDING",
+      startTime: dayAfter,
+      endTime: new Date(dayAfter.getTime() + 60 * 60 * 1000),
+      customerName: "Michael Chen",
+      customerEmail: "mchen@bigcorp.com",
+      customerPhone: "+1 555-0202",
+      customFieldData: { company: "BigCorp", team_size: "51-200" },
     },
   });
 
   console.log(
-    `✅ Midwife Sari services: ${pemeriksaanKehamilan.name}, ${imunisasi.name}, ${konsultasiLaktasi.name}`
+    `✅ Event types + schedules + bookings created for ${tenant1.username}`
   );
 
-  // ============================================================
-  // 4. Schedules — Different per Staff (including OWNER)
-  // ============================================================
-
-  // Admin Utama (OWNER): Senin-Jumat, 08:00-12:00 (Pagi) & 13:00-17:00 (Sore)
-  const ownerSchedules = [
-    { dayOfWeek: 1, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 1, startTime: "13:00", endTime: "17:00" },
-    { dayOfWeek: 2, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 2, startTime: "13:00", endTime: "17:00" },
-    { dayOfWeek: 3, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 3, startTime: "13:00", endTime: "17:00" },
-    { dayOfWeek: 4, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 4, startTime: "13:00", endTime: "17:00" },
-    { dayOfWeek: 5, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 5, startTime: "13:00", endTime: "17:00" },
-  ];
-
-  await prisma.schedule.deleteMany({ where: { userId: owner.id } });
-  for (const s of ownerSchedules) {
-    await prisma.schedule.create({
-      data: { userId: owner.id, ...s },
-    });
-  }
-  console.log(`✅ Main Admin schedules: Monday-Friday (Morning + Afternoon)`);
-
-  // Dr. Budi: Senin-Jumat, 08:00-12:00 (Pagi) & 14:00-17:00 (Sore)
-  const budiSchedules = [
-    { dayOfWeek: 1, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 1, startTime: "14:00", endTime: "17:00" },
-    { dayOfWeek: 2, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 2, startTime: "14:00", endTime: "17:00" },
-    { dayOfWeek: 3, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 3, startTime: "14:00", endTime: "17:00" },
-    { dayOfWeek: 4, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 4, startTime: "14:00", endTime: "17:00" },
-    { dayOfWeek: 5, startTime: "08:00", endTime: "12:00" },
-    { dayOfWeek: 5, startTime: "14:00", endTime: "17:00" },
-  ];
-
-  // Clear existing schedules for Dr. Budi
-  await prisma.schedule.deleteMany({ where: { userId: drBudi.id } });
-  for (const s of budiSchedules) {
-    await prisma.schedule.create({
-      data: { userId: drBudi.id, ...s },
-    });
-  }
-  console.log(`✅ Dr. Budi schedules: Monday-Friday (Morning + Afternoon)`);
-
-  // Bidan Sari: Senin-Sabtu, 09:00-15:00
-  const sariSchedules = [
-    { dayOfWeek: 1, startTime: "09:00", endTime: "15:00" },
-    { dayOfWeek: 2, startTime: "09:00", endTime: "15:00" },
-    { dayOfWeek: 3, startTime: "09:00", endTime: "15:00" },
-    { dayOfWeek: 4, startTime: "09:00", endTime: "15:00" },
-    { dayOfWeek: 5, startTime: "09:00", endTime: "15:00" },
-    { dayOfWeek: 6, startTime: "09:00", endTime: "13:00" }, // Sabtu setengah hari
-  ];
-
-  await prisma.schedule.deleteMany({ where: { userId: bidanSari.id } });
-  for (const s of sariSchedules) {
-    await prisma.schedule.create({
-      data: { userId: bidanSari.id, ...s },
-    });
-  }
-  console.log(`✅ Midwife Sari schedules: Monday-Saturday (09:00-15:00/13:00)`);
-
-  // ============================================================
-  // 5. Sample Bookings
-  // ============================================================
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  // Dr. Budi — 2 bookings for tomorrow
-  const budiBooking1Start = new Date(tomorrow);
-  budiBooking1Start.setHours(9, 0, 0, 0);
-  const budiBooking1End = new Date(tomorrow);
-  budiBooking1End.setHours(9, 30, 0, 0);
-
-  await prisma.booking.upsert({
-    where: { id: "bk-budi-001" },
+  // ─── Demo Tenant 2: Freelance Designer ─────────────────────────────────────
+  const tenant2 = await prisma.user.upsert({
+    where: { email: "hello@janedoe.design" },
     update: {},
     create: {
-      id: "bk-budi-001",
-      userId: drBudi.id,
-      serviceTypeId: konsultasiUmum.id,
-      date: tomorrow,
-      startTime: budiBooking1Start,
-      endTime: budiBooking1End,
-      patientName: "Ahmad Fauzi",
-      patientPhone: "081234567890",
-      patientNotes: "Persistent cough symptoms",
-      status: "CONFIRMED",
+      username: "janedoe",
+      email: "hello@janedoe.design",
+      hashedPassword: await bcrypt.hash(tenant2Password, 12),
+      name: "Jane Doe",
+      role: "TENANT",
+      businessName: "Jane Doe Design Studio",
+      timezone: "Europe/London",
     },
   });
+  console.log(`✅ Tenant 2: ${tenant2.email} (@${tenant2.username})`);
 
-  const budiBooking2Start = new Date(tomorrow);
-  budiBooking2Start.setHours(10, 0, 0, 0);
-  const budiBooking2End = new Date(tomorrow);
-  budiBooking2End.setHours(11, 0, 0, 0);
-
-  await prisma.booking.upsert({
-    where: { id: "bk-budi-002" },
+  // Event type for tenant 2
+  const event3 = await prisma.eventType.upsert({
+    where: { userId_slug: { userId: tenant2.id, slug: "discovery-call" } },
     update: {},
     create: {
-      id: "bk-budi-002",
-      userId: drBudi.id,
-      serviceTypeId: medicalCheckup.id,
-      date: tomorrow,
-      startTime: budiBooking2Start,
-      endTime: budiBooking2End,
-      patientName: "Rina Handayani",
-      patientPhone: "082345678901",
-      status: "PENDING",
-    },
-  });
-
-  console.log(`✅ Dr. Budi bookings: 2 (1 CONFIRMED, 1 PENDING)`);
-
-  // Bidan Sari — 2 bookings for tomorrow
-  const sariBooking1Start = new Date(tomorrow);
-  sariBooking1Start.setHours(9, 0, 0, 0);
-  const sariBooking1End = new Date(tomorrow);
-  sariBooking1End.setHours(9, 30, 0, 0);
-
-  await prisma.booking.upsert({
-    where: { id: "bk-sari-001" },
-    update: {},
-    create: {
-      id: "bk-sari-001",
-      userId: bidanSari.id,
-      serviceTypeId: pemeriksaanKehamilan.id,
-      date: tomorrow,
-      startTime: sariBooking1Start,
-      endTime: sariBooking1End,
-      patientName: "Dewi Lestari",
-      patientPhone: "083456789012",
-      patientNotes: "7 months pregnant, routine check-up",
-      status: "CONFIRMED",
-    },
-  });
-
-  const sariBooking2Start = new Date(tomorrow);
-  sariBooking2Start.setHours(10, 0, 0, 0);
-  const sariBooking2End = new Date(tomorrow);
-  sariBooking2End.setHours(10, 15, 0, 0);
-
-  await prisma.booking.upsert({
-    where: { id: "bk-sari-002" },
-    update: {},
-    create: {
-      id: "bk-sari-002",
-      userId: bidanSari.id,
-      serviceTypeId: imunisasi.id,
-      date: tomorrow,
-      startTime: sariBooking2Start,
-      endTime: sariBooking2End,
-      patientName: "Putri Rahayu",
-      patientPhone: "084567890123",
-      patientNotes: "Booster DPT immunization for 6-month-old infant",
-      status: "PENDING",
-    },
-  });
-
-  console.log(`✅ Midwife Sari bookings: 2 (1 CONFIRMED, 1 PENDING)`);
-
-  // ============================================================
-  // 6. Historical Bookings (30 days) — for Dashboard Charts
-  // ============================================================
-
-  const patientNames = [
-    "Agus Pratama", "Siti Aminah", "Budi Hartono", "Ratna Sari",
-    "Hendra Wijaya", "Maya Putri", "Dedi Supriadi", "Lina Marlina",
-    "Fajar Nugroho", "Anisa Rahman", "Yudi Kurniawan", "Nita Anggraini",
-    "Eko Saputra", "Wulan Dari", "Rizki Maulana", "Fitri Handayani",
-    "Arif Budiman", "Dian Puspita", "Wahyu Setiawan", "Indah Permata",
-  ];
-
-  const allServices = [
-    { svc: konsultasiUmum, user: drBudi, dur: 30 },
-    { svc: medicalCheckup, user: drBudi, dur: 60 },
-    { svc: pemeriksaanKehamilan, user: bidanSari, dur: 30 },
-    { svc: imunisasi, user: bidanSari, dur: 15 },
-    { svc: konsultasiLaktasi, user: bidanSari, dur: 45 },
-  ];
-
-  const statuses: Array<"CONFIRMED" | "COMPLETED"> = ["CONFIRMED", "COMPLETED"];
-  let historicalCount = 0;
-
-  for (let i = 0; i < 40; i++) {
-    const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
-    const bookingDate = new Date(today);
-    bookingDate.setDate(bookingDate.getDate() - daysAgo);
-
-    const hour = 8 + Math.floor(Math.random() * 8); // 08:00 - 15:00
-    const minute = Math.random() < 0.5 ? 0 : 30;
-
-    const startTime = new Date(bookingDate);
-    startTime.setHours(hour, minute, 0, 0);
-
-    const svcPick = allServices[i % allServices.length];
-    const endTime = new Date(startTime);
-    endTime.setMinutes(endTime.getMinutes() + svcPick.dur);
-
-    const patient = patientNames[i % patientNames.length];
-    const phone = `08${String(1200000000 + i * 11111).slice(0, 10)}`;
-    const status = statuses[i % 2];
-    const bookingId = `bk-hist-${String(i + 1).padStart(3, "0")}`;
-
-    try {
-      await prisma.booking.upsert({
-        where: { id: bookingId },
-        update: {},
-        create: {
-          id: bookingId,
-          userId: svcPick.user.id,
-          serviceTypeId: svcPick.svc.id,
-          date: bookingDate,
-          startTime,
-          endTime,
-          patientName: patient,
-          patientPhone: phone,
-          status,
-          paymentStatus: "PAID",
-          totalPrice: svcPick.svc.price,
-          dpAmount: Math.round(svcPick.svc.price * svcPick.svc.dpPercentage / 100),
-          createdAt: startTime, // backdate createdAt for chart accuracy
+      userId: tenant2.id,
+      slug: "discovery-call",
+      name: "Discovery Call",
+      description: "30-minute chat to discuss your design project.",
+      duration: 30,
+      bufferTime: 5,
+      color: "#ec4899",
+      customFields: [
+        { id: "full_name", label: "Full Name", type: "text", required: true },
+        { id: "email", label: "Email Address", type: "email", required: true },
+        {
+          id: "project_type",
+          label: "Project Type",
+          type: "select",
+          required: true,
+          options: ["Logo Design", "Brand Identity", "Website Design", "Other"],
         },
-      });
-      historicalCount++;
-    } catch {
-      // Skip if unique constraint conflict (same userId+startTime)
-    }
+        {
+          id: "budget",
+          label: "Budget Range",
+          type: "select",
+          required: false,
+          options: ["< $1,000", "$1,000 - $5,000", "$5,000 - $10,000", "$10,000+"],
+        },
+        {
+          id: "message",
+          label: "Tell me about your project",
+          type: "textarea",
+          required: true,
+        },
+      ],
+    },
+  });
+  void event3; // suppress unused variable warning
+
+  // Schedules for tenant 2 (Mon-Thu, 10am-4pm GMT)
+  for (const dayOfWeek of [1, 2, 3, 4]) {
+    await prisma.schedule.upsert({
+      where: {
+        userId_dayOfWeek_startTime: {
+          userId: tenant2.id,
+          dayOfWeek,
+          startTime: "10:00",
+        },
+      },
+      update: {},
+      create: {
+        userId: tenant2.id,
+        dayOfWeek,
+        startTime: "10:00",
+        endTime: "16:00",
+        isActive: true,
+      },
+    });
   }
 
-  console.log(`✅ Historical bookings: ${historicalCount} generated (30-day spread)`);
+  console.log(
+    `✅ Event types + schedules created for ${tenant2.username}`
+  );
 
-  // ============================================================
-  // Done
-  // ============================================================
-  console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🎉 Seed complete! Login credentials:");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("OWNER:  admin@kliniku.com       / <SEED_PASSWORD>");
-  console.log("STAFF:  dr.budi@kliniku.com     / <SEED_PASSWORD>");
-  console.log("STAFF:  bidan.sari@kliniku.com  / <SEED_PASSWORD>");
-  console.log(`(password = $SEED_PASSWORD env var, default: changeme123)`);
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+  // ─── Audit Log: seed actions ────────────────────────────────────────────────
+  await prisma.auditLog.createMany({
+    data: [
+      {
+        action: "USER_CREATED",
+        actorId: admin.id,
+        targetId: tenant1.id,
+        metadata: { note: "seed" },
+      },
+      {
+        action: "USER_CREATED",
+        actorId: admin.id,
+        targetId: tenant2.id,
+        metadata: { note: "seed" },
+      },
+    ],
+  });
+
+  console.log("\n🎉 Seed complete!");
+  console.log("─────────────────────────────────────────");
+  console.log(`👑 Platform Admin: admin@nexcal.app / ${adminPassword}`);
+  console.log(
+    `🏢 Tenant 1: demo@acmecorp.com / ${tenant1Password}  (@acmecorp)`
+  );
+  console.log(
+    `🎨 Tenant 2: hello@janedoe.design / ${tenant2Password}  (@janedoe)`
+  );
+  console.log("─────────────────────────────────────────");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed error:", e);
+    console.error("[NexCal Seed Error]", e);
     process.exit(1);
   })
   .finally(async () => {

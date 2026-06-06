@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function AdminError({
   error,
@@ -14,12 +15,12 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950/30 sm:p-12">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center">
+      <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-slate-900 p-8 text-center">
         {/* Icon */}
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15">
           <svg
-            className="h-8 w-8 text-red-600 dark:text-red-400"
+            className="h-8 w-8 text-red-400"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -33,33 +34,31 @@ export default function AdminError({
           </svg>
         </div>
 
-        <h2 className="mb-2 text-xl font-bold text-red-800 dark:text-red-300">
-          Terjadi Kesalahan
-        </h2>
-        <p className="mb-6 max-w-md text-sm text-red-600 dark:text-red-400">
-          Maaf, terjadi kesalahan saat memuat halaman ini. Silakan coba lagi
-          atau kembali ke dashboard.
+        <h2 className="mb-2 text-lg font-bold text-white">Something went wrong</h2>
+        <p className="mb-6 text-sm text-slate-400">
+          An unexpected error occurred while loading this page. Please try again or return to
+          the dashboard.
         </p>
 
         {error.digest && (
-          <p className="mb-4 font-mono text-xs text-red-400 dark:text-red-500">
-            Kode Error: {error.digest}
+          <p className="mb-5 rounded-lg bg-slate-800 px-3 py-2 font-mono text-xs text-slate-500">
+            Error ID: {error.digest}
           </p>
         )}
 
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}
-            className="rounded-xl bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-red-700 hover:shadow-md active:scale-95"
+            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-500 active:scale-95"
           >
-            Coba Lagi
+            Try Again
           </button>
-          <a
+          <Link
             href="/admin/dashboard"
-            className="rounded-xl border border-red-200 bg-white px-6 py-2.5 text-sm font-semibold text-red-700 transition-all hover:bg-red-50 dark:border-red-800 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
+            className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:border-slate-600 hover:text-white"
           >
-            Kembali ke Dashboard
-          </a>
+            Back to Dashboard
+          </Link>
         </div>
       </div>
     </div>

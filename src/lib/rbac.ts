@@ -1,97 +1,72 @@
-/**
- * ============================================================
- * NexCal — RBAC Utility (Role-Based Access Control)
- * ============================================================
- * Centralized helper for all admin actions.
- * Determines data scope based on the user's role:
- *   OWNER → sees all data in their organization
- *   STAFF → sees only their own data
- * ============================================================
- */
+// src/lib/rbac.ts
+// NexCal v3.0 — Role-based access control helpers
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
-export interface RBACContext {
-  userId: string;
-  role: "OWNER" | "STAFF";
-  organizationId: string | null;
-}
+export type UserRole = "PLATFORM_ADMIN" | "TENANT";
 
-export interface DataScope {
-  /** Use this for Prisma `where` clauses — filters by userId or org member IDs */
-  userFilter: { userId: string } | { userId: { in: string[] } };
-  /** The authenticated user's ID */
-  currentUserId: string;
-  /** The authenticated user's role */
-  role: "OWNER" | "STAFF";
-  /** The organization ID (null for standalone users) */
-  organizationId: string | null;
+export interface AuthenticatedUser {
+  id: string;
+  username: string;
+  name: string | null | undefined;
+  email: string | null | undefined;
+  role: UserRole;
+  businessName: string | null;
+  timezone: string;
+  isActive: boolean;
 }
 
 /**
- * Get the authenticated user's RBAC context and data scope.
- * Returns null if the user is not authenticated.
- *
- * Usage in server actions:
- * ```ts
- * const scope = await getDataScope();
- * if (!scope) return { error: "Unauthorized" };
- *
- * const bookings = await prisma.booking.findMany({
- *   where: { ...scope.userFilter, status: "PENDING" },
- * });
- * ```
+ * Get the current authenticated user's session.
+ * Returns null if not authenticated.
  */
-export async function getDataScope(): Promise<DataScope | null> {
+export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
 
-  const { id: userId, role, organizationId } = session.user;
-
-  // STAFF: only sees their own data
-  if (role !== "OWNER" || !organizationId) {
-    return {
-      userFilter: { userId },
-      currentUserId: userId,
-      role: role as "OWNER" | "STAFF",
-      organizationId: organizationId ?? null,
-    };
-  }
-
-  // OWNER: sees all organization members' data
-  const orgMembers = await prisma.user.findMany({
-    where: { organizationId },
-    select: { id: true },
-  });
-
-  const memberIds = orgMembers.map((m: { id: string }) => m.id);
-
   return {
-    userFilter: { userId: { in: memberIds } },
-    currentUserId: userId,
-    role: "OWNER",
-    organizationId,
+    id: session.user.id,
+    username: session.user.username,
+    name: session.user.name,
+    email: session.user.email,
+    role: session.user.role,
+    businessName: session.user.businessName,
+    timezone: session.user.timezone,
+    isActive: session.user.isActive,
   };
 }
 
 /**
- * Get all staff members in the current user's organization.
- * Returns empty array for STAFF role or users without an organization.
+ * Require PLATFORM_ADMIN role. Redirects to /login if not authenticated,
+ * or to /user/dashboard if authenticated but wrong role.
+ * Use at the top of admin page/layout server components.
  */
-export async function getOrgMembers(): Promise<
-  Array<{ id: string; name: string; email: string; role: string }>
-> {
-  const session = await auth();
-  if (!session?.user?.id) return [];
+export async function requireAdmin(): Promise<AuthenticatedUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (user.role !== "PLATFORM_ADMIN") redirect("/user/dashboard");
+  return user;
+}
 
-  const { role, organizationId } = session.user;
+/**
+ * Require TENANT role. Redirects to /login if not authenticated,
+ * or to /admin/dashboard if authenticated as PLATFORM_ADMIN.
+ * Use at the top of tenant page/layout server components.
+ */
+export async function requireTenant(): Promise<AuthenticatedUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (user.role === "PLATFORM_ADMIN") redirect("/admin/dashboard");
+  return user;
+}
 
-  if (role !== "OWNER" || !organizationId) return [];
-
-  return prisma.user.findMany({
-    where: { organizationId },
-    select: { id: true, name: true, email: true, role: true },
-    orderBy: { name: "asc" },
-  });
+/**
+ * Require any authenticated user (any role).
+ * Redirects to /login if not authenticated.
+ */
+export async function requireAuth(): Promise<AuthenticatedUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return user;
 }
