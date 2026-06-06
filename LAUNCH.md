@@ -1,182 +1,129 @@
-# 🚀 NexCal v2.4 — Launch Kit
+# 🚀 NexCal v3.0 — Launch Kit
 
-> Internal marketing asset. Use these drafts as starting points for launch posts.
-> Adjust tone and details as needed for each platform.
+> Internal marketing assets and drafts for launching NexCal v3.0.
+> Customize templates based on the destination platform.
 
 ---
 
 ## 📝 Draft 1: Reddit (r/selfhosted & r/nextjs)
 
-### Title Options (pick one):
-- `I built a self-hosted Calendly alternative with built-in payments and zero chart library dependencies`
-- `NexCal — open-source multi-provider booking system with payment gateway, analytics, and WhatsApp notifications`
-- `After 3 months, my self-hosted booking platform now has features I'd pay $50/month for`
+### Title Options:
+* `I built an open-source, self-hosted Cal.com alternative with timezone conversion, webhooks, and an auto-resizing embed widget`
+* `Show r/selfhosted: NexCal v3.0 — A multi-tenant booking & scheduling SaaS you can run on a $5/mo VPS`
+* `Say goodbye to Calendly fees. Here is my self-hosted scheduling platform built with Next.js 16 and Prisma 7`
 
 ### Body:
 
 Hey r/selfhosted!
 
-I've been building **NexCal** — a self-hosted booking/appointment system for businesses with multiple practitioners (clinics, salons, studios, consulting firms). It started as a simple calendar tool but has grown into something I'm genuinely proud of.
+I’ve been building **NexCal**—a self-hosted, multi-tenant scheduling and booking platform inspired by Cal.com. Version 3.0 has been rewritten from scratch to support multi-tenancy. You can host it yourself and offer booking services to multiple businesses (each with isolated dashboards).
 
-**What makes it different from other open-source booking tools:**
+**Key Features in v3.0:**
 
-🏢 **Multi-provider by design** — Not just "one person, one calendar." NexCal has organizations, OWNER/STAFF roles, and each provider manages their own services and schedule. Customers choose their provider → service → time slot.
+* 🏢 **True Multi-Tenancy**: Separate tenant workspaces. Platform Admins manage accounts and logs, while Tenants manage schedules, events, and CRM.
+* 🕐 **Capitals Timezone Engine**: Combobox selector mapping capital cities of all countries in the world. Displays live local clocks and UTC offsets. Detects visitors' browser timezones automatically.
+* 📋 **Dynamic Form Fields**: Tenants build customized forms for each event type (supports input fields, textareas, phone numbers, and dropdown selects).
+* 🧩 **Drop-in Embed Widget (`embed.js`)**: A script tag that injects an iframe. The iframe uses `postMessage` and `ResizeObserver` to communicate height changes back to the host window, ensuring zero cutoff or double scrollbars.
+* 🔔 **Reliable Webhooks**: outbound events (created, rescheduled, cancelled) signed with HMAC-SHA256, featuring an automated exponential backoff retry loop and delivery log page.
+* 🛡️ **Race-Condition Safety**: 3-layer anti double-booking checks: Zod validation -> server slot reservation -> database constraints.
 
-💳 **Built-in payment gateway** — Gateway-agnostic architecture (Midtrans included, extensible to Stripe/Xendit). Supports full payment or down payment (DP) per service. Webhook auto-confirms bookings when payment settles. Leave the env var empty = payments disabled, booking works normally.
+**Tech stack**: Next.js 16, TypeScript 5, Prisma 7, PostgreSQL, Tailwind CSS v4, Docker.
 
-📊 **Analytics dashboard with ZERO chart library** — Revenue tracking, 30-day trend chart, top services, staff performance — all built with pure CSS flexbox bars. No recharts, no chart.js, no bundle bloat. The analytics engine runs 9 parallel Prisma queries for maximum performance.
+**Quick Start**:
+```bash
+git clone https://github.com/yourusername/nexcal.git
+cd nexcal
+cp .env.production.example .env
+# Edit .env variables (AUTH_SECRET, DATABASE_URL)
+docker compose -f docker-compose.prod.yml up -d --build
+```
 
-⏱️ **Smart scheduling** — Dual-layer buffer times prevent back-to-back burnout. A 30-minute consultation with 10-minute buffer blocks 10:00–10:40, not just 10:00–10:30.
+The database seeds automatically with a Platform Admin and two demo tenants to play with!
 
-🛡️ **3-layer anti double-booking** — Zod validation → slot re-check → PostgreSQL unique constraint. Even millisecond-simultaneous submissions can't create conflicts.
+GitHub: https://github.com/yourusername/nexcal
 
-📢 **WhatsApp notifications** — Optional integration with MultiWA (another open-source project of mine) for automated booking reminders and payment receipts.
-
-**Tech stack:** Next.js 16, TypeScript, Prisma 7, PostgreSQL, Tailwind CSS 4, Docker.
-
-**Self-hosting:** `docker compose up` and you're live. Auto-migrations, demo seed data included.
-
-GitHub: https://github.com/ribato22/nexcal
-
-I'd love feedback from the community. What features would make you switch from Calendly/Cal.com?
+I'd love to hear your feedback on self-hosting scheduling platforms. What feature would make you host your own scheduler?
 
 ---
 
 ## 🐦 Draft 2: Twitter/X Thread
 
-### Thread:
+### Thread Structure:
 
-**Tweet 1 (Hook):**
-I was paying $48/month for Calendly Pro.
+**Tweet 1 (Hook)**
+Paying $15/month per user for booking tools adds up fast.
 
-Then I realized I could build a better version — with payments, analytics, and WhatsApp notifications — for $0/month.
+So I built a self-hosted, multi-tenant alternative inspired by Cal.com. 
 
-Meet NexCal. Open-source. Self-hosted. MIT licensed.
+Meet NexCal v3.0. Secure, timezone-aware, extensible, and 100% open-source.
 
-🧵 Here's what 3 months of building looks like:
-
----
-
-**Tweet 2:**
-Most open-source booking tools are single-user calendars.
-
-NexCal is built for TEAMS from day one:
-• Organizations with OWNER/STAFF roles
-• Each provider manages their own schedule
-• Customers pick: Provider → Service → Time
-• RBAC controls who sees what data
+Here is what it does: 👇
 
 ---
 
-**Tweet 3:**
-The payment system that took me 3 days to architect:
-
-Gateway-agnostic. Plugin pattern. One interface, infinite gateways.
-
-✅ Midtrans (Indonesia) — shipped
-🔜 Stripe, Xendit — just add one file
-
-DP support, webhook auto-confirm, WhatsApp receipts.
-
-Leave the env var empty? Payments disabled. Zero friction.
+**Tweet 2**
+🏢 **True Multi-Tenancy**
+Create multiple isolated business profiles on a single deployment.
+- Tenants manage schedules, custom fields, and CRM.
+- Platform Admins monitor user status and audit logs from a dedicated panel.
+- Fast, secure cookie authentication via Auth.js v5.
 
 ---
 
-**Tweet 4:**
-The analytics dashboard that uses ZERO chart libraries:
-
-• Revenue tracking (current vs last month, growth %)
-• 30-day trend — pure CSS bar chart with hover tooltips
-• Top 5 services ranked with progress bars
-• Staff performance table (Owner-only, RBAC-aware)
-
-9 parallel Prisma queries. One Promise.all. Instant load.
+**Tweet 3**
+🕐 **Capitals Timezone Engine**
+International booking is tricky. NexCal stores schedules in UTC and uses a global lookup database of world capital cities.
+- Dynamic timezone selector with live local clocks.
+- Automatic browser timezone detection.
+- Flawless slot calculations with date-fns-tz.
 
 ---
 
-**Tweet 5:**
-Anti double-booking? 3 independent layers:
-
-Layer 1: Zod schema validation
-Layer 2: Real-time slot re-check before insert
-Layer 3: PostgreSQL unique constraint
-
-Even if 2 customers submit at the EXACT same millisecond — the database catches it.
-
-Zero conflicts. Guaranteed.
+**Tweet 4**
+🧩 **Resizing Embed Widget**
+No more ugly double scrollbars when embedding your calendar.
+Our vanilla JS `embed.js` script injects an iframe that uses `ResizeObserver` and `postMessage` to auto-expand to fit the host container. 
 
 ---
 
-**Tweet 6 (CTA):**
-NexCal v2.4 is live:
+**Tweet 5**
+🔔 **Developer Integrations**
+Connect your booking flows to n8n, Zapier, or your backend.
+- HMAC-SHA256 signature verification.
+- In-depth delivery logs and request payloads.
+- Automated exponential-backoff retry queue for failing endpoints.
 
-⏱️ Smart buffer time scheduling
-💳 Built-in payment gateway
-📊 Business intelligence dashboard
-📢 WhatsApp notifications
-🐳 One `docker compose up`
+---
 
-Free. Forever. MIT License.
+**Tweet 6 (CTA)**
+NexCal v3.0 is built on Next.js 16 (App Router), Prisma 7, Tailwind CSS v4, and PostgreSQL.
 
-⭐ https://github.com/ribato22/nexcal
-
-If you're tired of paying $50+/month for appointment scheduling — star the repo and try it.
+Try it out on GitHub, star the repo, and host it on a $5 VPS:
+⭐ https://github.com/yourusername/nexcal
 
 ---
 
 ## 💼 Draft 3: LinkedIn Post
 
-### Post:
+**Introducing NexCal v3.0 — The Multi-Tenant Scheduling & Booking SaaS You Own**
 
-**Announcing NexCal v2.4 — The Open-Source Scheduling Platform for Growing Businesses**
+Are you paying high monthly subscription fees per user for Calendly or Acuity? For a small agency or clinic, subscription fees can drain budgets, and you lose absolute ownership of customer data.
 
-After 3 months of intensive development, I'm excited to share NexCal — a production-grade appointment scheduling system built for multi-provider businesses like clinics, salons, studios, and consulting firms.
+Today, I'm sharing **NexCal v3.0**—a self-hosted, multi-tenant booking and scheduling platform designed to be a private alternative to Cal.com.
 
-**The problem we solved:**
-Small and medium businesses pay $30-100/month per provider for scheduling tools like Calendly and Acuity. That's $1,200+/year for a 3-person clinic — and you don't even own the data.
+**What's new in v3.0:**
 
-**What NexCal brings to the table:**
+* 🚀 **Multi-Tenant Architecture**: Launch your own booking platform. Users create isolated accounts, manage their own events, schedules, and custom forms.
+* 🌍 **Global Timezone Selector**: Built-in global database of world capitals. The booking wizard translates slots to local visitor times on the fly.
+* 🧩 **Perfect iframe Embeds**: A drop-in javascript snippet (`embed.js`) that automatically resizes the parent iframe on the host page to eliminate double scrollbars.
+* ⚡ **Integrations & Webhooks**: HMAC-SHA256 signed event webhooks with built-in retry queues and delivery logs, perfect for automated CRM syncing.
 
-💳 **Integrated Payment Processing**
-Accept payments directly through the booking flow with down payment (DP) support. When payment settles, the booking auto-confirms and the customer receives a WhatsApp receipt. No more chasing no-shows — prepayment reduces no-show rates by up to 70%.
+**Why Self-Host?**
+1. **100% Data Ownership**: Host it on your own servers to ensure compliance.
+2. **Flat Costs**: Host 1 or 100 business profiles on a single $6 VPS without scaling subscription charges.
+3. **Customizability**: Extensible Tailwind CSS layouts and TypeScript schemas ready for branding.
 
-📊 **Business Intelligence Dashboard**
-Revenue tracking with month-over-month growth analysis. Service performance ranking. Staff productivity metrics. All in real-time, all RBAC-compliant — business owners see the full picture, staff members see their own performance.
+Source code and Docker quick-start guide are available on GitHub:
+👉 https://github.com/yourusername/nexcal
 
-⏱️ **Smart Scheduling Engine**
-Configurable buffer times between appointments prevent provider burnout and ensure quality of service. A 30-minute consultation with a 10-minute buffer ensures the next patient isn't waiting while the doctor finishes notes.
-
-🏢 **Team-first Architecture**
-Organizations, role-based access, per-provider schedules. NexCal isn't a personal calendar — it's built for teams from the ground up.
-
-**Technology:** Next.js 16, TypeScript, PostgreSQL, Docker. Self-hosted with a single command. Zero runtime dependencies for charts (pure CSS visualization). MIT Licensed.
-
-**What this means for business owners:**
-- Own your data (GDPR/privacy compliance simplified)
-- Zero monthly subscription fees
-- Reduce no-shows with prepayment integration
-- Data-driven decisions with built-in analytics
-- Scale from 1 to 50+ providers without changing tools
-
-The complete source code is available on GitHub: https://github.com/ribato22/nexcal
-
-I'd love to hear from clinic managers, salon owners, and business operators — what scheduling pain points keep you up at night?
-
-#OpenSource #SaaS #HealthTech #BusinessIntelligence #SelfHosted #NextJS #Scheduling
-
----
-
-## 📋 Platform Posting Checklist
-
-| Platform | Subreddit / Channel | Timing | Status |
-|----------|---------------------|--------|--------|
-| Reddit | r/selfhosted | Weekday 9-11 AM EST | ⬜ |
-| Reddit | r/nextjs | Weekday 10 AM EST | ⬜ |
-| Reddit | r/webdev | Weekend morning | ⬜ |
-| Twitter/X | Main account | Tuesday or Wednesday 2 PM WIB | ⬜ |
-| LinkedIn | Personal profile | Tuesday 8-10 AM WIB | ⬜ |
-| Hacker News | Show HN | Weekday 9 AM EST | ⬜ |
-| Dev.to | Article (longer form) | Any weekday | ⬜ |
-| Product Hunt | Launch | Tuesday-Thursday | ⬜ |
-
-> **Pro tip:** Post on Reddit first (#1 traffic source for self-hosted), then Twitter thread for developer audience, then LinkedIn for B2B leads.
+#OpenSource #NextJS #SaaS #SelfHosted #WebDevelopment #TimezoneDesign #CalendlyAlternative #Docker

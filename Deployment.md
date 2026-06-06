@@ -1,6 +1,6 @@
 # Production Deployment Guide for NexCal
 
-This guide provides step-by-step instructions for deploying NexCal to your VPS inside a single Docker container environment with a persistent PostgreSQL database and webhook integrations (e.g. for n8n).
+This guide provides step-by-step instructions for deploying NexCal to your VPS inside a Docker environment with a persistent PostgreSQL database, multi-tenancy auth, timezone translation, and dynamic webhooks.
 
 ---
 
@@ -16,46 +16,52 @@ Before starting, ensure your VPS has the following installed:
 
 ## ⚙️ Environment Variables
 
-NexCal requires the following environment variables to run in production. Create a `.env` file or set them directly in `docker-compose.yml`:
+NexCal is configured using server-level environment variables in a `.env` file. Create a `.env` file in the project root containing:
 
-| Variable | Description | Example |
-| :--- | :--- | :--- |
-| `DATABASE_URL` | PostgreSQL connection string. | `postgresql://postgres:postgres_password@db:5432/booking_db?schema=public` |
-| `NEXT_PUBLIC_APP_URL` | The public URL of the application. | `https://booking.yourdomain.com` |
-| `NEXTAUTH_URL` | The public URL of the auth endpoints. | `https://booking.yourdomain.com` |
-| `AUTH_SECRET` | Secret key used for signing session cookies. | Generate via `openssl rand -base64 32` |
-| `N8N_WEBHOOK_URL` | URL of your self-hosted n8n webhook receiver. | `https://n8n.yourdomain.com/webhook/nexcal-trigger` |
-| `NEXT_PUBLIC_APP_NAME` | The name of your application. | `NexCal` |
+| Variable | Required | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `DATABASE_URL` | Yes | PostgreSQL connection string. | `postgresql://postgres:postgres_password@db:5432/nexcal?schema=public` |
+| `NEXT_PUBLIC_APP_URL` | Yes | The public URL of the application. | `https://booking.yourdomain.com` |
+| `AUTH_SECRET` | Yes | Secret key used for signing session cookies. | Generate via `openssl rand -base64 32` |
+| `AUTH_TRUST_HOST` | Yes | Trust reverse proxies (set `true` in production). | `true` |
+| `NEXT_PUBLIC_APP_NAME` | No | Custom display name for the platform. | `NexCal` |
+
+*Note: Integration credentials (such as webhook endpoints and client settings) are configured dynamically by tenants in their dashboard UI, not via environment variables.*
 
 ---
 
 ## 🚀 Deployment Steps
 
-### Step 1: Clone the Code base
+### Step 1: Clone the Codebase
 SSH into your VPS and clone the project repository:
 ```bash
 git clone <your-repo-url> /var/www/nexcal
 cd /var/www/nexcal
 ```
 
-### Step 2: Verify Configuration Files
-Ensure `Dockerfile`, `docker-compose.yml`, and `deploy.sh` exist in your project root. 
-
-Make the deployment script executable:
+### Step 2: Set Up Environment Configuration
+Copy the production environment template and edit the values:
 ```bash
-chmod +x deploy.sh
+cp .env.production.example .env
+nano .env
+```
+Ensure you generate a secure `AUTH_SECRET` and set the correct `DATABASE_URL` and `NEXT_PUBLIC_APP_URL`.
+
+### Step 3: Configure SSL and Reverse Proxy (Caddy or Nginx)
+To serve the app securely over HTTPS, configure a reverse proxy to route traffic to the container (running on port `3000`).
+
+#### Option A: Caddy (Recommended)
+Caddy automatically handles SSL generation and renewal.
+Create a `Caddyfile` in the project root:
+```caddy
+booking.yourdomain.com {
+    reverse_proxy localhost:3000
+}
 ```
 
-### Step 3: Configure SSL and Reverse Proxy (Nginx)
-To serve the app securely over HTTPS, configure Nginx to proxy traffic to the Docker container (running on port `3000`).
-
-1. Install Nginx and Certbot:
-   ```bash
-   sudo apt update
-   sudo apt install nginx certbot python3-certbot-nginx -y
-   ```
-
-2. Create a new Nginx block configuration (`/etc/nginx/sites-available/nexcal`):
+#### Option B: Nginx
+If using Nginx, configure Nginx to proxy traffic:
+1. Create a configuration block (`/etc/nginx/sites-available/nexcal`):
    ```nginx
    server {
        server_name booking.yourdomain.com;
@@ -73,56 +79,43 @@ To serve the app securely over HTTPS, configure Nginx to proxy traffic to the Do
        }
    }
    ```
-
-3. Enable the config and reload Nginx:
+2. Enable it and run Certbot to configure SSL certificates:
    ```bash
    sudo ln -s /etc/nginx/sites-available/nexcal /etc/nginx/sites-enabled/
-   sudo nginx -t
    sudo systemctl reload nginx
-   ```
-
-4. Fetch SSL certificate:
-   ```bash
    sudo certbot --nginx -d booking.yourdomain.com
    ```
 
-### Step 4: Run the Application
-Start the containers using the deployment script:
+### Step 4: Launch the Containers
+Launch the stack using Docker Compose:
 ```bash
-./deploy.sh
+docker compose -f docker-compose.prod.yml up -d --build
 ```
-*Note: On first startup, the container automatically executes `npx prisma db push` to push database schemas, tables, and structures.*
+On first startup, the container entrypoint will automatically run database migrations (`npx prisma migrate deploy`) and seed the initial tenant/admin accounts.
 
-### Step 5: Seed Demo Data (Optional)
-If you want to populate the database with default organizations, services, and schedules, execute the seed command inside the running container:
-```bash
-docker compose exec app npm run db:seed
-```
+### Step 5: Default Seed Logins
+Once running, you can log in to NexCal using these default accounts:
 
-Seeded credentials (from `prisma/seed.ts`):
-- **OWNER**: `admin@kliniku.com` (password: `changeme123`)
-- **STAFF**: `dr.budi@kliniku.com` (password: `changeme123`)
-- **STAFF**: `bidan.sari@kliniku.com` (password: `changeme123`)
+| Role | Email | Password | Username/Handle |
+| :--- | :--- | :--- | :--- |
+| 👑 Platform Admin | `admin@nexcal.app` | `admin123456` | `admin` |
+| 🏢 Demo Tenant 1 | `demo@acmecorp.com` | `tenant123456` | `acmecorp` |
+| 🎨 Demo Tenant 2 | `hello@janedoe.design` | `tenant123456` | `janedoe` |
+
+> ⚠️ **Warning**: Log in and update these default passwords immediately in the Settings pane!
 
 ---
 
-## 🔄 How to Redeploy / Hot-Update
+## 🪵 Container Logs & Operations
 
-To deploy code updates, simply run:
+To view logs or manage containers:
 ```bash
-./deploy.sh
-```
-The script will pull modifications from your git repository, compile the Next.js production build, run database updates, and recreate container instances cleanly with zero configuration loss.
+# Inspect application output
+docker compose -f docker-compose.prod.yml logs -f app
 
----
+# Inspect database output
+docker compose -f docker-compose.prod.yml logs -f db
 
-## 🪵 Checking Application Logs
-
-To inspect the real-time application logs or database container outputs:
-```bash
-# View app logs
-docker compose logs -f app
-
-# View db logs
-docker compose logs -f db
+# Stop the stack
+docker compose -f docker-compose.prod.yml down
 ```

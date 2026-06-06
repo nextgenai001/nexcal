@@ -196,6 +196,17 @@ function verifySignature(rawBody, secret, receivedSignature) {
 
 ---
 
+## 📚 Additional Documentation
+
+For detailed information on specific topics, refer to these dedicated markdown files:
+
+* 🏗️ **[PROJECT.md](PROJECT.md)**: Describes system architecture, database layout, file structures, and the implementation checklist. Refer to this to understand the code organization.
+* 🚀 **[Deployment.md](Deployment.md)**: Step-by-step guide for hosting NexCal on a VPS, configuring SSL certificates (Caddy/Nginx), and managing container variables. Refer to this when launching in production.
+* 🗺️ **[ROADMAP.md](ROADMAP.md)**: Highlights historical version accomplishments and outlines technical design proposals for future feature additions (v3.5–v4.0). Refer to this to coordinate contributions.
+* 📢 **[LAUNCH.md](LAUNCH.md)**: Formatted marketing assets, reddit threads, and launch announcements. Refer to this to write social/release posts.
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
