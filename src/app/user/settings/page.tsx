@@ -8,7 +8,19 @@ export const metadata = {
 };
 
 export default async function SettingsPage() {
-  const user = await requireTenant();
+  const sessionUser = await requireTenant();
+  
+  const dbUser = await prisma.user.findUnique({
+    where: { id: sessionUser.id },
+    select: {
+      name: true,
+      username: true,
+      businessName: true,
+      timezone: true,
+    },
+  });
+
+  const user = dbUser ? { ...sessionUser, ...dbUser } : sessionUser;
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">

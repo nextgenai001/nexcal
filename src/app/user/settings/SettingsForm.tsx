@@ -25,7 +25,7 @@ export default function SettingsForm({ user }: { user: any }) {
         <input
           type="text"
           name="businessName"
-          defaultValue={user.businessName || ""}
+          defaultValue={user.businessName || user.name || ""}
           className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
       </div>
