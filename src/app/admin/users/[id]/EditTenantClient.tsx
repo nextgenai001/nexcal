@@ -9,40 +9,7 @@ import {
 } from "@/actions/admin-users";
 import { format } from "date-fns";
 
-// ── Timezones (same list as create page) ────────────────────────────────────
-
-const TIMEZONES = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Vancouver",
-  "America/Toronto",
-  "America/Sao_Paulo",
-  "America/Argentina/Buenos_Aires",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Europe/Madrid",
-  "Europe/Amsterdam",
-  "Europe/Istanbul",
-  "Africa/Cairo",
-  "Africa/Lagos",
-  "Asia/Dubai",
-  "Asia/Kolkata",
-  "Asia/Dhaka",
-  "Asia/Bangkok",
-  "Asia/Jakarta",
-  "Asia/Singapore",
-  "Asia/Shanghai",
-  "Asia/Tokyo",
-  "Asia/Seoul",
-  "Australia/Sydney",
-  "Australia/Melbourne",
-  "Pacific/Auckland",
-  "Pacific/Honolulu",
-];
+import TimezoneCombobox from "@/components/ui/TimezoneCombobox";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -173,21 +140,14 @@ export default function EditTenantClient({ tenant }: { tenant: TenantData }) {
           </div>
 
           <div>
-            <label htmlFor="timezone" className="block text-xs font-medium text-slate-400">
+            <label htmlFor="timezone" className="block text-xs font-medium text-slate-400 mb-1.5">
               Timezone <span className="text-red-400">*</span>
             </label>
-            <select
-              id="timezone"
+            <TimezoneCombobox
               name="timezone"
               defaultValue={tenant.timezone}
-              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/40"
-            >
-              {TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
+              required
+            />
           </div>
 
           <button

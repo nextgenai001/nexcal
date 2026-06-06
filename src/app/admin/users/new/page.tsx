@@ -6,43 +6,7 @@ import { createTenantAction } from "@/actions/admin-users";
 import Link from "next/link";
 import { useEffect } from "react";
 
-// ── Common IANA timezones ────────────────────────────────────────────────────
-
-const TIMEZONES = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Vancouver",
-  "America/Toronto",
-  "America/Sao_Paulo",
-  "America/Argentina/Buenos_Aires",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Europe/Madrid",
-  "Europe/Amsterdam",
-  "Europe/Istanbul",
-  "Africa/Cairo",
-  "Africa/Lagos",
-  "Asia/Dubai",
-  "Asia/Kolkata",
-  "Asia/Dhaka",
-  "Asia/Bangkok",
-  "Asia/Jakarta",
-  "Asia/Singapore",
-  "Asia/Shanghai",
-  "Asia/Tokyo",
-  "Asia/Seoul",
-  "Australia/Sydney",
-  "Australia/Melbourne",
-  "Pacific/Auckland",
-  "Pacific/Honolulu",
-];
-
-// ── Form state type ──────────────────────────────────────────────────────────
-
+import TimezoneCombobox from "@/components/ui/TimezoneCombobox";
 import { type ActionResult } from "@/actions/admin-users";
 
 type FormState = ActionResult<{ userId: string }> | null;
@@ -196,21 +160,14 @@ export default function NewTenantPage() {
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
           <h2 className="mb-4 text-sm font-semibold text-white">Scheduling</h2>
           <div>
-            <label htmlFor="timezone" className="block text-xs font-medium text-slate-400">
+            <label htmlFor="timezone" className="block text-xs font-medium text-slate-400 mb-1.5">
               Timezone <span className="text-red-400">*</span>
             </label>
-            <select
-              id="timezone"
+            <TimezoneCombobox
               name="timezone"
               defaultValue="UTC"
-              className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/40"
-            >
-              {TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
+              required
+            />
           </div>
         </div>
 

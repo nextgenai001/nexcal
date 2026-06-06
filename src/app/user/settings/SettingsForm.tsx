@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { updateTenantProfileAction } from "@/actions/tenant-settings";
+import TimezoneCombobox from "@/components/ui/TimezoneCombobox";
 
 export default function SettingsForm({ user }: { user: any }) {
   const [state, formAction, isPending] = useActionState(updateTenantProfileAction, { success: false, error: null });
@@ -30,25 +31,12 @@ export default function SettingsForm({ user }: { user: any }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300">Timezone</label>
-        <select
+        <label className="block text-sm font-medium text-slate-300 mb-1.5">Timezone</label>
+        <TimezoneCombobox
           name="timezone"
           defaultValue={user.timezone}
           required
-          className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        >
-          {/* Simplified list of timezones for this task */}
-          <option value="UTC">UTC</option>
-          <option value="America/New_York">Eastern Time (US & Canada)</option>
-          <option value="America/Chicago">Central Time (US & Canada)</option>
-          <option value="America/Denver">Mountain Time (US & Canada)</option>
-          <option value="America/Los_Angeles">Pacific Time (US & Canada)</option>
-          <option value="Europe/London">London</option>
-          <option value="Europe/Paris">Paris</option>
-          <option value="Asia/Tokyo">Tokyo</option>
-          <option value="Asia/Jakarta">Jakarta</option>
-          <option value="Australia/Sydney">Sydney</option>
-        </select>
+        />
       </div>
 
       <div className="pt-4 flex justify-end">
