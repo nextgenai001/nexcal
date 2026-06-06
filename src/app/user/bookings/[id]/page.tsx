@@ -9,11 +9,12 @@ export const metadata = {
   title: "Booking Details - NexCal",
 };
 
-export default async function BookingDetailsPage({ params }: { params: { id: string } }) {
+export default async function BookingDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireTenant();
+  const { id } = await params;
 
   const booking = await prisma.booking.findUnique({
-    where: { id: params.id, userId: user.id },
+    where: { id, userId: user.id },
     include: { eventType: true },
   });
 
