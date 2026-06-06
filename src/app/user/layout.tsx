@@ -2,6 +2,7 @@
 // NexCal v3.0 — Tenant panel layout
 
 import { requireTenant } from "@/lib/rbac";
+import { prisma } from "@/lib/prisma";
 import UserSidebar from "@/components/user/UserSidebar";
 import UserHeader from "@/components/user/UserHeader";
 
@@ -10,7 +11,19 @@ export default async function UserLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireTenant();
+  const sessionUser = await requireTenant();
+  
+  // Fetch fresh user data from DB to avoid stale session data (e.g. business name changes)
+  const dbUser = await prisma.user.findUnique({
+    where: { id: sessionUser.id },
+    select: {
+      name: true,
+      username: true,
+      businessName: true,
+    },
+  });
+
+  const user = dbUser ? { ...sessionUser, ...dbUser } : sessionUser;
 
   return (
     <div className="flex h-screen bg-slate-950 text-white">

@@ -15,7 +15,7 @@ export default function UserHeader({ user }: { user: any }) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-800 bg-slate-900 px-6">
       <h1 className="text-lg font-semibold text-white">
-        {user.businessName || "My Business"}
+        {user.businessName || user.name || user.username || "My Business"}
       </h1>
       <button
         onClick={handleSignOut}
