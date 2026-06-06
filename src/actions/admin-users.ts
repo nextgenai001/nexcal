@@ -66,7 +66,7 @@ async function writeAuditLog({
       action,
       actorId,
       targetId: targetId ?? null,
-      metadata: metadata ?? {},
+      metadata: metadata ? (metadata as any) : {},
     },
   });
 }
@@ -78,6 +78,7 @@ async function writeAuditLog({
  * Called from /admin/users/new
  */
 export async function createTenantAction(
+  state: ActionResult<{ userId: string }> | null,
   formData: FormData
 ): Promise<ActionResult<{ userId: string }>> {
   try {
@@ -153,6 +154,7 @@ export async function createTenantAction(
  */
 export async function updateTenantAction(
   tenantId: string,
+  state: ActionResult | null,
   formData: FormData
 ): Promise<ActionResult> {
   try {
@@ -221,6 +223,7 @@ export async function updateTenantAction(
  */
 export async function resetTenantPasswordAction(
   tenantId: string,
+  state: ActionResult | null,
   formData: FormData
 ): Promise<ActionResult> {
   try {

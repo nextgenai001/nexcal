@@ -92,14 +92,14 @@ export default function EditTenantClient({ tenant }: { tenant: TenantData }) {
   const updateAction = updateTenantAction.bind(null, tenant.id);
   const [updateState, updateFormAction, isUpdating] = useActionState<ActionResult, FormData>(
     updateAction,
-    null
+    {}
   );
 
   // ─ Password reset ──────────────────────────────────────────────────────────
   const resetPasswordBound = resetTenantPasswordAction.bind(null, tenant.id);
   const [pwState, pwFormAction, isPwPending] = useActionState<ActionResult, FormData>(
     resetPasswordBound,
-    null
+    {}
   );
 
   // ─ Toggle active ───────────────────────────────────────────────────────────

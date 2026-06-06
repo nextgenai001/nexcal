@@ -43,7 +43,9 @@ const TIMEZONES = [
 
 // ── Form state type ──────────────────────────────────────────────────────────
 
-type FormState = { error?: string; success?: boolean; userId?: string } | null;
+import { type ActionResult } from "@/actions/admin-users";
+
+type FormState = ActionResult<{ userId: string }> | null;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -58,8 +60,8 @@ export default function NewTenantPage() {
 
   // Redirect on success
   useEffect(() => {
-    if (state?.success && state.userId) {
-      router.push(`/admin/users/${state.userId}`);
+    if (state?.data?.userId) {
+      router.push(`/admin/users/${state.data.userId}`);
     }
   }, [state, router]);
 
