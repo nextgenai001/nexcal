@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { createManualBookingAction } from "@/actions/booking-actions";
 import { useRouter } from "next/navigation";
 
@@ -8,9 +8,11 @@ export default function BookingForm({ eventTypes }: { eventTypes: any[] }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createManualBookingAction, { success: false, error: null });
 
-  if (state.success) {
-    router.push("/user/bookings");
-  }
+  useEffect(() => {
+    if (state.success) {
+      router.push("/user/bookings");
+    }
+  }, [state.success, router]);
 
   return (
     <form action={formAction} className="space-y-6">

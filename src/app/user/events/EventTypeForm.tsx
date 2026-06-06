@@ -1,16 +1,57 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { createEventTypeAction, updateEventTypeAction } from "@/actions/event-types";
 import { useRouter } from "next/navigation";
 
 export default function EventTypeForm({ eventType }: { eventType?: any }) {
   const router = useRouter();
-  const [fields, setFields] = useState<any[]>(
-    eventType?.customFields && Array.isArray(eventType.customFields)
-      ? eventType.customFields
-      : []
-  );
+  const customFieldsData = eventType?.customFields;
+
+  const [defaultFields, setDefaultFields] = useState(() => {
+    const defaults = {
+      name: { enabled: true, required: true, label: "Full Name" },
+      email: { enabled: true, required: true, label: "Email Address" },
+      phone: { enabled: false, required: false, label: "Phone Number" },
+      guests: { enabled: false, required: false, label: "Add Guests (emails)" },
+      meeting_about: { enabled: false, required: false, label: "What is this meeting about?" },
+      notes: { enabled: false, required: false, label: "Additional Notes" }
+    };
+    if (customFieldsData && typeof customFieldsData === "object" && !Array.isArray(customFieldsData)) {
+      return { ...defaults, ...customFieldsData.defaultFields };
+    }
+    return defaults;
+  });
+
+  const [fields, setFields] = useState<any[]>(() => {
+    if (customFieldsData && typeof customFieldsData === "object" && !Array.isArray(customFieldsData)) {
+      return Array.isArray(customFieldsData.customFields) ? customFieldsData.customFields : [];
+    }
+    if (Array.isArray(customFieldsData)) {
+      return customFieldsData;
+    }
+    return [];
+  });
+
+  const toggleDefaultField = (key: string, field: "enabled" | "required", value: boolean) => {
+    setDefaultFields((prev: any) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [field]: value
+      }
+    }));
+  };
+
+  const [slug, setSlug] = useState(eventType?.slug || "");
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const autoSlug = e.target.value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    setSlug(autoSlug);
+  };
 
   const addField = () => {
     setFields([
@@ -33,9 +74,11 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
 
   const [state, formAction, isPending] = useActionState(action, { success: false, error: null });
 
-  if (state.success) {
-    router.push("/user/events");
-  }
+  useEffect(() => {
+    if (state.success) {
+      router.push("/user/events");
+    }
+  }, [state.success, router]);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -53,6 +96,7 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
             id="name"
             name="name"
             defaultValue={eventType?.name}
+            onChange={handleNameChange}
             required
             className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
@@ -60,17 +104,18 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
 
         <div>
           <label htmlFor="slug" className="block text-sm font-medium text-slate-300">URL Slug</label>
-          <div className="mt-1 flex rounded-lg border border-slate-700 bg-slate-800 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-            <span className="inline-flex items-center rounded-l-lg border-r border-slate-700 bg-slate-800 px-3 text-sm text-slate-400">
+          <div className="mt-1 flex rounded-lg border border-slate-800 bg-slate-900/30 select-none">
+            <span className="inline-flex items-center rounded-l-lg border-r border-slate-800 bg-slate-900/30 px-3 text-sm text-slate-500">
               /username/
             </span>
             <input
               type="text"
               id="slug"
               name="slug"
-              defaultValue={eventType?.slug}
+              value={slug}
+              readOnly
               required
-              className="block w-full rounded-r-lg bg-transparent p-2.5 text-white focus:outline-none"
+              className="block w-full rounded-r-lg bg-transparent p-2.5 text-slate-400 cursor-not-allowed focus:outline-none"
             />
           </div>
         </div>
@@ -99,19 +144,53 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
           />
         </div>
 
-        <div className="pt-4 border-t border-slate-800">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-white">Custom Fields</h3>
-            <button
-              type="button"
-              onClick={addField}
-              className="text-sm text-indigo-400 hover:text-indigo-300"
-            >
-              + Add Field
-            </button>
+        <div className="pt-4 border-t border-slate-800 space-y-6">
+          {/* Default Fields Toggles */}
+          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+            <h3 className="text-sm font-bold text-white mb-3">Default Form Fields</h3>
+            <div className="space-y-3.5 divide-y divide-slate-800/60">
+              {Object.entries(defaultFields).map(([key, config]: [string, any]) => (
+                <div key={key} className="flex items-center justify-between text-xs py-2 first:pt-0">
+                  <span className="font-semibold text-slate-300">{config.label}</span>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.enabled}
+                        onChange={(e) => toggleDefaultField(key, "enabled", e.target.checked)}
+                        className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs text-slate-400">Enabled</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.required}
+                        disabled={!config.enabled}
+                        onChange={(e) => toggleDefaultField(key, "required", e.target.checked)}
+                        className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 disabled:opacity-30"
+                      />
+                      <span className={`text-xs ${config.enabled ? 'text-slate-400' : 'text-slate-600'}`}>Required</span>
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          
-          <input type="hidden" name="customFields" value={JSON.stringify(fields)} />
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-white">Custom Fields</h3>
+              <button
+                type="button"
+                onClick={addField}
+                className="text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+              >
+                + Add Custom Field
+              </button>
+            </div>
+            
+            <input type="hidden" name="customFields" value={JSON.stringify({ defaultFields, customFields: fields })} />
           
           <div className="space-y-4">
             {fields.map((field) => (
@@ -169,6 +248,7 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
           </div>
         </div>
       </div>
+    </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
         <button

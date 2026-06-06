@@ -7,11 +7,12 @@ export const metadata = {
   title: "Edit Event Type - NexCal",
 };
 
-export default async function EditEventTypePage({ params }: { params: { id: string } }) {
+export default async function EditEventTypePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireTenant();
+  const { id } = await params;
   
-  const eventType = await prisma.eventType.findUnique({
-    where: { id: params.id, userId: user.id },
+  const eventType = await prisma.eventType.findFirst({
+    where: { id, userId: user.id },
   });
   
   if (!eventType) {

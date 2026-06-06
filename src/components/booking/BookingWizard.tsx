@@ -53,8 +53,36 @@ export default function BookingWizard({ user, eventType }: Props) {
   const [formData, setFormData] = useState<Record<string, any>>({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    guests: '',
+    meeting_about: '',
+    notes: ''
   });
+
+  const parsedFormConfig = useMemo(() => {
+    const config = eventType.customFields;
+    const defaults = {
+      name: { enabled: true, required: true, label: "Full Name" },
+      email: { enabled: true, required: true, label: "Email Address" },
+      phone: { enabled: false, required: false, label: "Phone Number" },
+      guests: { enabled: false, required: false, label: "Add Guests (emails)" },
+      meeting_about: { enabled: false, required: false, label: "What is this meeting about?" },
+      notes: { enabled: false, required: false, label: "Additional Notes" }
+    };
+    
+    if (config && typeof config === "object" && !Array.isArray(config)) {
+      return {
+        defaultFields: { ...defaults, ...(config as any).defaultFields },
+        customFields: Array.isArray((config as any).customFields) ? (config as any).customFields : []
+      };
+    }
+    
+    // Fallback if old format
+    return {
+      defaultFields: defaults,
+      customFields: Array.isArray(config) ? config : []
+    };
+  }, [eventType.customFields]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -323,30 +351,100 @@ export default function BookingWizard({ user, eventType }: Props) {
             )}
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2 space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
-                <input 
-                  type="text" 
-                  required 
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  value={formData.name}
-                  onChange={e => handleInputChange('name', e.target.value)}
-                />
-              </div>
+              {/* Dynamic Default Fields */}
+              {parsedFormConfig.defaultFields.name.enabled && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {parsedFormConfig.defaultFields.name.label} {parsedFormConfig.defaultFields.name.required ? '*' : ''}
+                  </label>
+                  <input 
+                    type="text" 
+                    required={parsedFormConfig.defaultFields.name.required}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    value={formData.name || ''}
+                    onChange={e => handleInputChange('name', e.target.value)}
+                  />
+                </div>
+              )}
               
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
-                <input 
-                  type="email" 
-                  required 
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  value={formData.email}
-                  onChange={e => handleInputChange('email', e.target.value)}
-                />
-              </div>
+              {parsedFormConfig.defaultFields.email.enabled && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {parsedFormConfig.defaultFields.email.label} {parsedFormConfig.defaultFields.email.required ? '*' : ''}
+                  </label>
+                  <input 
+                    type="email" 
+                    required={parsedFormConfig.defaultFields.email.required}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    value={formData.email || ''}
+                    onChange={e => handleInputChange('email', e.target.value)}
+                  />
+                </div>
+              )}
+
+              {parsedFormConfig.defaultFields.phone.enabled && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {parsedFormConfig.defaultFields.phone.label} {parsedFormConfig.defaultFields.phone.required ? '*' : ''}
+                  </label>
+                  <input 
+                    type="tel" 
+                    required={parsedFormConfig.defaultFields.phone.required}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    value={formData.phone || ''}
+                    onChange={e => handleInputChange('phone', e.target.value)}
+                  />
+                </div>
+              )}
+
+              {parsedFormConfig.defaultFields.guests.enabled && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {parsedFormConfig.defaultFields.guests.label} {parsedFormConfig.defaultFields.guests.required ? '*' : ''}
+                  </label>
+                  <input 
+                    type="text" 
+                    required={parsedFormConfig.defaultFields.guests.required}
+                    placeholder="e.g. guest1@example.com, guest2@example.com"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    value={formData.guests || ''}
+                    onChange={e => handleInputChange('guests', e.target.value)}
+                  />
+                </div>
+              )}
+
+              {parsedFormConfig.defaultFields.meeting_about.enabled && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {parsedFormConfig.defaultFields.meeting_about.label} {parsedFormConfig.defaultFields.meeting_about.required ? '*' : ''}
+                  </label>
+                  <input 
+                    type="text" 
+                    required={parsedFormConfig.defaultFields.meeting_about.required}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    value={formData.meeting_about || ''}
+                    onChange={e => handleInputChange('meeting_about', e.target.value)}
+                  />
+                </div>
+              )}
+
+              {parsedFormConfig.defaultFields.notes.enabled && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {parsedFormConfig.defaultFields.notes.label} {parsedFormConfig.defaultFields.notes.required ? '*' : ''}
+                  </label>
+                  <textarea 
+                    required={parsedFormConfig.defaultFields.notes.required}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    value={formData.notes || ''}
+                    onChange={e => handleInputChange('notes', e.target.value)}
+                  />
+                </div>
+              )}
 
               {/* Dynamic Custom Fields */}
-              {Array.isArray(eventType.customFields) && eventType.customFields.map((field: any) => (
+              {parsedFormConfig.customFields.map((field: any) => (
                 <div key={field.id}>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     {field.label} {field.required ? '*' : ''}

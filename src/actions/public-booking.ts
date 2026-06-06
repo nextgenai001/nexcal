@@ -83,23 +83,59 @@ export async function submitBookingAction(
 
     const endTime = new Date(startTime.getTime() + eventType.duration * 60000);
 
-    // Basic extraction
-    const { name, email, phone, ...customFieldData } = formData;
-    if (!name || !email) {
-      return { error: 'Name and email are required' };
+    // Parse custom fields configuration to get default fields setup
+    const config = eventType.customFields;
+    const defaults = {
+      name: { enabled: true, required: true },
+      email: { enabled: true, required: true },
+      phone: { enabled: false, required: false },
+      guests: { enabled: false, required: false },
+      meeting_about: { enabled: false, required: false },
+      notes: { enabled: false, required: false }
+    };
+    
+    const defaultFields = config && typeof config === "object" && !Array.isArray(config)
+      ? { ...defaults, ...(config as any).defaultFields }
+      : defaults;
+
+    // Validate enabled & required fields
+    if (defaultFields.name.enabled && defaultFields.name.required && !formData.name) {
+      return { error: 'Full Name is required' };
     }
+    if (defaultFields.email.enabled && defaultFields.email.required && !formData.email) {
+      return { error: 'Email Address is required' };
+    }
+    if (defaultFields.phone.enabled && defaultFields.phone.required && !formData.phone) {
+      return { error: 'Phone Number is required' };
+    }
+    if (defaultFields.guests.enabled && defaultFields.guests.required && !formData.guests) {
+      return { error: 'Guest email list is required' };
+    }
+    if (defaultFields.meeting_about.enabled && defaultFields.meeting_about.required && !formData.meeting_about) {
+      return { error: 'Meeting details are required' };
+    }
+    if (defaultFields.notes.enabled && defaultFields.notes.required && !formData.notes) {
+      return { error: 'Additional notes are required' };
+    }
+
+    const { name, email, phone, guests, meeting_about, notes, ...customFieldData } = formData;
 
     const booking = await prisma.booking.create({
       data: {
         userId: user.id,
         eventTypeId: eventType.id,
-        status: 'CONFIRMED', // or PENDING depending on setting, assuming CONFIRMED for now
+        status: 'CONFIRMED',
         startTime,
         endTime,
-        customerName: name,
-        customerEmail: email,
+        customerName: name || '',
+        customerEmail: email || '',
         customerPhone: phone || null,
-        customFieldData: customFieldData || {},
+        customFieldData: {
+          ...(customFieldData || {}),
+          ...(guests ? { guests } : {}),
+          ...(meeting_about ? { meeting_about } : {}),
+          ...(notes ? { notes } : {})
+        },
       }
     });
 

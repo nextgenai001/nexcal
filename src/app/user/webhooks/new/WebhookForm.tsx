@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { createWebhookAction } from "@/actions/webhook-actions";
 import { useRouter } from "next/navigation";
 
@@ -17,9 +17,11 @@ export default function WebhookForm() {
   const [secret, setSecret] = useState("");
   const [state, formAction, isPending] = useActionState(createWebhookAction, { success: false, error: null });
 
-  if (state.success) {
-    router.push("/user/webhooks");
-  }
+  useEffect(() => {
+    if (state.success) {
+      router.push("/user/webhooks");
+    }
+  }, [state.success, router]);
 
   const generateSecret = () => {
     const array = new Uint8Array(32);

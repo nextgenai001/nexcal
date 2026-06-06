@@ -37,6 +37,19 @@ export async function createEventTypeAction(prevState: any, formData: FormData) 
     
     const customFields = customFieldsRaw ? JSON.parse(customFieldsRaw) : [];
 
+    // Check duplicate slug for the same user
+    const existing = await prisma.eventType.findUnique({
+      where: {
+        userId_slug: {
+          userId: user.id,
+          slug,
+        },
+      },
+    });
+    if (existing) {
+      return { success: false, error: "An event type with this URL slug already exists." };
+    }
+
     await prisma.eventType.create({
       data: {
         name,
@@ -66,6 +79,19 @@ export async function updateEventTypeAction(id: string, prevState: any, formData
     const customFieldsRaw = formData.get("customFields") as string;
     
     const customFields = customFieldsRaw ? JSON.parse(customFieldsRaw) : [];
+
+    // Check duplicate slug for the same user
+    const existing = await prisma.eventType.findUnique({
+      where: {
+        userId_slug: {
+          userId: user.id,
+          slug,
+        },
+      },
+    });
+    if (existing && existing.id !== id) {
+      return { success: false, error: "An event type with this URL slug already exists." };
+    }
 
     await prisma.eventType.update({
       where: { id, userId: user.id },
