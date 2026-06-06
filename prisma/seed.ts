@@ -97,17 +97,10 @@ async function main() {
   });
 
   // Schedules for tenant 1 (Mon-Fri, 9am-5pm ET)
+  await prisma.schedule.deleteMany({ where: { userId: tenant1.id } });
   for (const dayOfWeek of [1, 2, 3, 4, 5]) {
-    await prisma.schedule.upsert({
-      where: {
-        userId_dayOfWeek_startTime: {
-          userId: tenant1.id,
-          dayOfWeek,
-          startTime: "09:00",
-        },
-      },
-      update: {},
-      create: {
+    await prisma.schedule.create({
+      data: {
         userId: tenant1.id,
         dayOfWeek,
         startTime: "09:00",
@@ -219,17 +212,10 @@ async function main() {
   void event3; // suppress unused variable warning
 
   // Schedules for tenant 2 (Mon-Thu, 10am-4pm GMT)
+  await prisma.schedule.deleteMany({ where: { userId: tenant2.id } });
   for (const dayOfWeek of [1, 2, 3, 4]) {
-    await prisma.schedule.upsert({
-      where: {
-        userId_dayOfWeek_startTime: {
-          userId: tenant2.id,
-          dayOfWeek,
-          startTime: "10:00",
-        },
-      },
-      update: {},
-      create: {
+    await prisma.schedule.create({
+      data: {
         userId: tenant2.id,
         dayOfWeek,
         startTime: "10:00",

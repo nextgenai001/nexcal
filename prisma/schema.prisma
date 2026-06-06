@@ -44,6 +44,7 @@ model User {
   businessLogo   String?   @map("business_logo")
   timezone       String    @default("UTC")  // IANA: "Asia/Jakarta"
   isActive       Boolean   @default(true)   @map("is_active")
+  globalBreaks   Json      @default("[]")   @map("global_breaks")
 
   createdAt      DateTime  @default(now())  @map("created_at")
   updatedAt      DateTime  @updatedAt       @map("updated_at")
@@ -101,7 +102,7 @@ model Schedule {
   userId    String  @map("user_id")
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, dayOfWeek, startTime])
+  @@index([userId, dayOfWeek])
   @@map("schedules")
 }
 

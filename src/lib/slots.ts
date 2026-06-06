@@ -13,13 +13,17 @@ export async function getAvailableSlots(
   startDate: Date,
   endDate: Date
 ): Promise<Slot[]> {
-  // 1. Fetch user to get timezone
+  // 1. Fetch user to get timezone & global breaks
   const user = await prisma.user.findUnique({
     where: { id: userId, isActive: true },
-    select: { timezone: true }
+    select: { timezone: true, globalBreaks: true }
   });
   if (!user) throw new Error('User not found or inactive');
   const tenantTimezone = user.timezone || 'UTC';
+  
+  const globalBreaks = Array.isArray(user.globalBreaks)
+    ? (user.globalBreaks as { startTime: string; endTime: string }[])
+    : [];
 
   // 2. Fetch EventType
   const eventType = await prisma.eventType.findUnique({
@@ -93,6 +97,13 @@ export async function getAvailableSlots(
       }
     }
 
+    // Subtract global breaks
+    for (const brk of globalBreaks) {
+      if (brk.startTime && brk.endTime) {
+        activeWindows = subtractSingleBreak(activeWindows, brk);
+      }
+    }
+
     // Generate slots for each window
     for (const window of activeWindows) {
       const windowStartLocal = `${currentDayStr}T${window.start}:00`;
@@ -144,4 +155,36 @@ export async function getAvailableSlots(
   }
 
   return availableSlots;
+}
+
+// Subtracts a single break from an array of active windows
+function subtractSingleBreak(
+  windows: { start: string; end: string }[],
+  brk: { startTime: string; endTime: string }
+): { start: string; end: string }[] {
+  const result: { start: string; end: string }[] = [];
+  const bStart = brk.startTime;
+  const bEnd = brk.endTime;
+
+  for (const w of windows) {
+    if (bEnd <= w.start || bStart >= w.end) {
+      // No overlap
+      result.push(w);
+    } else if (bStart <= w.start && bEnd >= w.end) {
+      // Break completely covers window
+      continue;
+    } else if (bStart > w.start && bEnd < w.end) {
+      // Break splits the window in two
+      result.push({ start: w.start, end: bStart });
+      result.push({ start: bEnd, end: w.end });
+    } else if (bStart <= w.start && bEnd > w.start && bEnd < w.end) {
+      // Break overlaps the start of window
+      result.push({ start: bEnd, end: w.end });
+    } else if (bStart > w.start && bStart < w.end && bEnd >= w.end) {
+      // Break overlaps the end of window
+      result.push({ start: w.start, end: bStart });
+    }
+  }
+
+  return result;
 }

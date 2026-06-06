@@ -8,33 +8,53 @@ export async function updateScheduleAction(prevState: any, formData: FormData) {
   try {
     const user = await requireTenant();
     
-    // schedules logic: 
-    // formData contains days and their start/end times
-    // For simplicity, we'll parse a JSON from a hidden field
+    // Parse schedules (array of { dayOfWeek: number, ranges: { startTime, endTime }[], isActive: boolean })
     const schedulesRaw = formData.get("schedules") as string;
     const schedules = JSON.parse(schedulesRaw) as {
       dayOfWeek: number;
-      startTime: string;
-      endTime: string;
+      ranges: { startTime: string; endTime: string }[];
       isActive: boolean;
     }[];
+
+    // Parse globalBreaks (array of { startTime: string, endTime: string })
+    const globalBreaksRaw = formData.get("globalBreaks") as string;
+    const globalBreaks = globalBreaksRaw ? JSON.parse(globalBreaksRaw) : [];
 
     // Delete existing schedules for this user
     await prisma.schedule.deleteMany({
       where: { userId: user.id },
     });
 
-    // Create new schedules
-    const activeSchedules = schedules.filter(s => s.isActive);
-    if (activeSchedules.length > 0) {
+    // Update global breaks on the User profile
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        globalBreaks: globalBreaks,
+      },
+    });
+
+    // Create new schedules (one row per active daily range)
+    const insertData: { dayOfWeek: number; startTime: string; endTime: string; userId: string; isActive: boolean }[] = [];
+
+    schedules.forEach(s => {
+      if (s.isActive && Array.isArray(s.ranges)) {
+        s.ranges.forEach(r => {
+          if (r.startTime && r.endTime) {
+            insertData.push({
+              dayOfWeek: s.dayOfWeek,
+              startTime: r.startTime,
+              endTime: r.endTime,
+              userId: user.id,
+              isActive: true,
+            });
+          }
+        });
+      }
+    });
+
+    if (insertData.length > 0) {
       await prisma.schedule.createMany({
-        data: activeSchedules.map(s => ({
-          dayOfWeek: s.dayOfWeek,
-          startTime: s.startTime,
-          endTime: s.endTime,
-          isActive: true,
-          userId: user.id,
-        })),
+        data: insertData,
       });
     }
 
