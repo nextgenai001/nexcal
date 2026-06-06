@@ -25,6 +25,7 @@ interface TenantData {
   bookingCount: number;
   eventTypeCount: number;
   lastBookingAt: string | null;
+  embedViews: number;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,16 +58,16 @@ function AlertBanner({ type, message }: { type: "error" | "success"; message: st
 export default function EditTenantClient({ tenant }: { tenant: TenantData }) {
   // ─ Profile update ──────────────────────────────────────────────────────────
   const updateAction = updateTenantAction.bind(null, tenant.id);
-  const [updateState, updateFormAction, isUpdating] = useActionState<ActionResult, FormData>(
+  const [updateState, updateFormAction, isUpdating] = useActionState<ActionResult | null, FormData>(
     updateAction,
-    {}
+    null
   );
 
   // ─ Password reset ──────────────────────────────────────────────────────────
   const resetPasswordBound = resetTenantPasswordAction.bind(null, tenant.id);
-  const [pwState, pwFormAction, isPwPending] = useActionState<ActionResult, FormData>(
+  const [pwState, pwFormAction, isPwPending] = useActionState<ActionResult | null, FormData>(
     resetPasswordBound,
-    {}
+    null
   );
 
   // ─ Toggle active ───────────────────────────────────────────────────────────

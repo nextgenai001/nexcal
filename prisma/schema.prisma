@@ -45,6 +45,7 @@ model User {
   timezone       String    @default("UTC")  // IANA: "Asia/Jakarta"
   isActive       Boolean   @default(true)   @map("is_active")
   globalBreaks   Json      @default("[]")   @map("global_breaks")
+  embedViews     Int       @default(0)      @map("embed_views")
 
   createdAt      DateTime  @default(now())  @map("created_at")
   updatedAt      DateTime  @updatedAt       @map("updated_at")

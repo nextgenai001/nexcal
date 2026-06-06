@@ -6,20 +6,45 @@ interface Props {
   params: Promise<{
     username: string;
   }>;
+  searchParams: Promise<{
+    embed?: string;
+  }>;
 }
 
-export default async function TenantProfilePage({ params }: Props) {
+export default async function TenantProfilePage({ params, searchParams }: Props) {
   const { username } = await params;
+  const sParams = await searchParams;
+  const isEmbed = sParams.embed === "true";
   
-  const user = await prisma.user.findUnique({
-    where: { username, isActive: true },
-    include: {
-      eventTypes: {
-        where: { isActive: true },
-        orderBy: { name: 'asc' }
-      }
+  let user = null;
+  if (isEmbed) {
+    try {
+      user = await prisma.user.update({
+        where: { username, isActive: true },
+        data: { embedViews: { increment: 1 } },
+        include: {
+          eventTypes: {
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+          }
+        }
+      });
+    } catch (e) {
+      // ignore, user might not exist and will fail below
     }
-  });
+  }
+
+  if (!user) {
+    user = await prisma.user.findUnique({
+      where: { username, isActive: true },
+      include: {
+        eventTypes: {
+          where: { isActive: true },
+          orderBy: { name: 'asc' }
+        }
+      }
+    });
+  }
 
   if (!user) {
     notFound();

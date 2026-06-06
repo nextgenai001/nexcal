@@ -25,10 +25,16 @@ export default function EventTypeCard({ eventType, username }: { eventType: any,
   };
 
   const bookingLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/${username}/${eventType.slug}`;
+  const embedCode = `<iframe src="${bookingLink}?embed=true" width="100%" height="600" frameborder="0"></iframe>`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(bookingLink);
-    alert("Copied to clipboard!");
+    alert("Copied link to clipboard!");
+  };
+
+  const handleCopyEmbed = () => {
+    navigator.clipboard.writeText(embedCode);
+    alert("Copied HTML embed code to clipboard!");
   };
 
   return (
@@ -66,15 +72,28 @@ export default function EventTypeCard({ eventType, username }: { eventType: any,
       </div>
 
       <div className="flex items-center justify-between border-t border-slate-800 pt-4">
-        <button
-          onClick={handleCopyLink}
-          className="text-sm text-slate-400 hover:text-white flex items-center gap-1"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-             <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-          </svg>
-          Copy Link
-        </button>
+        <div className="flex items-center gap-3.5">
+          <button
+            onClick={handleCopyLink}
+            className="text-sm text-slate-400 hover:text-white flex items-center gap-1"
+            title="Copy booking link"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+            </svg>
+            Copy Link
+          </button>
+          <button
+            onClick={handleCopyEmbed}
+            className="text-sm text-slate-400 hover:text-white flex items-center gap-1"
+            title="Copy HTML iframe embed code"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+            </svg>
+            Copy Embed
+          </button>
+        </div>
         <div className="flex items-center gap-3">
           <Link
             href={`/user/events/${eventType.id}`}

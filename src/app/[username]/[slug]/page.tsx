@@ -7,22 +7,49 @@ interface Props {
     username: string;
     slug: string;
   }>;
+  searchParams: Promise<{
+    embed?: string;
+  }>;
 }
 
-export default async function BookingPage({ params }: Props) {
+export default async function BookingPage({ params, searchParams }: Props) {
   const { username, slug } = await params;
+  const sParams = await searchParams;
+  const isEmbed = sParams.embed === "true";
 
-  const user = await prisma.user.findUnique({
-    where: { username, isActive: true },
-    select: {
-      id: true,
-      username: true,
-      businessName: true,
-      name: true,
-      businessLogo: true,
-      timezone: true
+  let user = null;
+  if (isEmbed) {
+    try {
+      user = await prisma.user.update({
+        where: { username, isActive: true },
+        data: { embedViews: { increment: 1 } },
+        select: {
+          id: true,
+          username: true,
+          businessName: true,
+          name: true,
+          businessLogo: true,
+          timezone: true
+        }
+      });
+    } catch (e) {
+      // ignore
     }
-  });
+  }
+
+  if (!user) {
+    user = await prisma.user.findUnique({
+      where: { username, isActive: true },
+      select: {
+        id: true,
+        username: true,
+        businessName: true,
+        name: true,
+        businessLogo: true,
+        timezone: true
+      }
+    });
+  }
 
   if (!user) {
     notFound();

@@ -52,6 +52,7 @@ export default async function EditTenantPage({ params }: PageProps) {
     bookingCount: user._count.bookings,
     eventTypeCount: user._count.eventTypes,
     lastBookingAt: lastBooking?.startTime.toISOString() ?? null,
+    embedViews: user.embedViews,
   };
 
   return (
@@ -84,7 +85,7 @@ export default async function EditTenantPage({ params }: PageProps) {
       </div>
 
       {/* ── Stats row ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-center">
           <p className="text-2xl font-bold text-white">{user._count.bookings}</p>
           <p className="mt-1 text-xs text-slate-500">Bookings</p>
@@ -100,6 +101,10 @@ export default async function EditTenantPage({ params }: PageProps) {
               : "—"}
           </p>
           <p className="mt-1 text-xs text-slate-500">Last Booking</p>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-center">
+          <p className="text-2xl font-bold text-white">{user.embedViews}</p>
+          <p className="mt-1 text-xs text-slate-500">Embed Views</p>
         </div>
       </div>
 
