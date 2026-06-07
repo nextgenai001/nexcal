@@ -4,7 +4,13 @@ import { useActionState, useState, useEffect } from "react";
 import { createEventTypeAction, updateEventTypeAction } from "@/actions/event-types";
 import { useRouter } from "next/navigation";
 
-export default function EventTypeForm({ eventType }: { eventType?: any }) {
+export default function EventTypeForm({ 
+  eventType,
+  availabilitySchedules = []
+}: { 
+  eventType?: any;
+  availabilitySchedules?: any[];
+}) {
   const router = useRouter();
   const customFieldsData = eventType?.customFields;
 
@@ -153,6 +159,26 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
             min={1}
             className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
+        </div>
+
+        <div>
+          <label htmlFor="availabilityScheduleId" className="block text-sm font-medium text-slate-300">Availability Schedule</label>
+          <select
+            id="availabilityScheduleId"
+            name="availabilityScheduleId"
+            defaultValue={eventType?.availabilityScheduleId || availabilitySchedules.find(as => as.isDefault)?.id || ""}
+            required
+            className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            {availabilitySchedules.map((as) => (
+              <option key={as.id} value={as.id}>
+                {as.name} {as.isDefault ? "(Default)" : ""}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Select the availability schedule that governs when this event can be booked.
+          </p>
         </div>
 
         <div className="pt-4 border-t border-slate-800 space-y-4">

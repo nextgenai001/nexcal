@@ -11,9 +11,15 @@ export default async function EditEventTypePage({ params }: { params: Promise<{ 
   const user = await requireTenant();
   const { id } = await params;
   
-  const eventType = await prisma.eventType.findFirst({
-    where: { id, userId: user.id },
-  });
+  const [eventType, availabilitySchedules] = await Promise.all([
+    prisma.eventType.findFirst({
+      where: { id, userId: user.id },
+    }),
+    prisma.availabilitySchedule.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "asc" }
+    })
+  ]);
   
   if (!eventType) {
     notFound();
@@ -27,7 +33,7 @@ export default async function EditEventTypePage({ params }: { params: Promise<{ 
       </div>
       
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <EventTypeForm eventType={eventType} />
+        <EventTypeForm eventType={eventType} availabilitySchedules={availabilitySchedules} />
       </div>
     </div>
   );

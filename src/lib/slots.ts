@@ -35,8 +35,22 @@ export async function getAvailableSlots(
   const buffer = eventType.bufferTime;
 
   // 3. Fetch Schedules & Overrides
+  let availabilityScheduleId = eventType.availabilityScheduleId;
+  if (!availabilityScheduleId) {
+    const defaultSchedule = await prisma.availabilitySchedule.findFirst({
+      where: { userId, isDefault: true }
+    });
+    if (defaultSchedule) {
+      availabilityScheduleId = defaultSchedule.id;
+    }
+  }
+
   const schedules = await prisma.schedule.findMany({
-    where: { userId, isActive: true }
+    where: {
+      userId,
+      isActive: true,
+      ...(availabilityScheduleId ? { availabilityScheduleId } : {})
+    }
   });
 
   // We should fetch overrides that overlap the requested period

@@ -47,10 +47,22 @@ async function main() {
   });
   console.log(`✅ Tenant 1: ${tenant1.email} (@${tenant1.username})`);
 
+  // Create default schedule for tenant 1
+  await prisma.availabilitySchedule.deleteMany({ where: { userId: tenant1.id } });
+  const scheduleGroup1 = await prisma.availabilitySchedule.create({
+    data: {
+      name: "Default Schedule",
+      isDefault: true,
+      userId: tenant1.id,
+    }
+  });
+
   // Event types for tenant 1
   const event1 = await prisma.eventType.upsert({
     where: { userId_slug: { userId: tenant1.id, slug: "30-min-demo" } },
-    update: {},
+    update: {
+      availabilityScheduleId: scheduleGroup1.id,
+    },
     create: {
       userId: tenant1.id,
       slug: "30-min-demo",
@@ -59,6 +71,7 @@ async function main() {
       duration: 30,
       bufferTime: 10,
       color: "#6366f1",
+      availabilityScheduleId: scheduleGroup1.id,
       customFields: [
         { id: "full_name", label: "Full Name", type: "text", required: true },
         { id: "email", label: "Email Address", type: "email", required: true },
@@ -71,7 +84,9 @@ async function main() {
 
   const event2 = await prisma.eventType.upsert({
     where: { userId_slug: { userId: tenant1.id, slug: "1hr-consultation" } },
-    update: {},
+    update: {
+      availabilityScheduleId: scheduleGroup1.id,
+    },
     create: {
       userId: tenant1.id,
       slug: "1hr-consultation",
@@ -80,6 +95,7 @@ async function main() {
       duration: 60,
       bufferTime: 15,
       color: "#8b5cf6",
+      availabilityScheduleId: scheduleGroup1.id,
       customFields: [
         { id: "full_name", label: "Full Name", type: "text", required: true },
         { id: "email", label: "Email Address", type: "email", required: true },
@@ -102,6 +118,7 @@ async function main() {
     await prisma.schedule.create({
       data: {
         userId: tenant1.id,
+        availabilityScheduleId: scheduleGroup1.id,
         dayOfWeek,
         startTime: "09:00",
         endTime: "17:00",
@@ -171,10 +188,22 @@ async function main() {
   });
   console.log(`✅ Tenant 2: ${tenant2.email} (@${tenant2.username})`);
 
+  // Create default schedule for tenant 2
+  await prisma.availabilitySchedule.deleteMany({ where: { userId: tenant2.id } });
+  const scheduleGroup2 = await prisma.availabilitySchedule.create({
+    data: {
+      name: "Default Schedule",
+      isDefault: true,
+      userId: tenant2.id,
+    }
+  });
+
   // Event type for tenant 2
   const event3 = await prisma.eventType.upsert({
     where: { userId_slug: { userId: tenant2.id, slug: "discovery-call" } },
-    update: {},
+    update: {
+      availabilityScheduleId: scheduleGroup2.id,
+    },
     create: {
       userId: tenant2.id,
       slug: "discovery-call",
@@ -183,6 +212,7 @@ async function main() {
       duration: 30,
       bufferTime: 5,
       color: "#ec4899",
+      availabilityScheduleId: scheduleGroup2.id,
       customFields: [
         { id: "full_name", label: "Full Name", type: "text", required: true },
         { id: "email", label: "Email Address", type: "email", required: true },
@@ -217,6 +247,7 @@ async function main() {
     await prisma.schedule.create({
       data: {
         userId: tenant2.id,
+        availabilityScheduleId: scheduleGroup2.id,
         dayOfWeek,
         startTime: "10:00",
         endTime: "16:00",

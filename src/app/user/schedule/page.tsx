@@ -10,10 +10,15 @@ export const metadata = {
 export default async function SchedulePage() {
   const user = await requireTenant();
 
-  const [schedules, dateOverrides, dbUser] = await Promise.all([
-    prisma.schedule.findMany({
+  const [availabilitySchedules, dateOverrides, dbUser] = await Promise.all([
+    prisma.availabilitySchedule.findMany({
       where: { userId: user.id },
-      orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+      orderBy: { createdAt: "asc" },
+      include: {
+        schedules: {
+          orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+        }
+      }
     }),
     prisma.dateOverride.findMany({
       where: { userId: user.id, date: { gte: new Date() } },
@@ -38,7 +43,7 @@ export default async function SchedulePage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-lg font-semibold mb-4">Weekly Hours</h2>
-            <ScheduleForm schedules={schedules} globalBreaks={globalBreaks} />
+            <ScheduleForm availabilitySchedules={availabilitySchedules} globalBreaks={globalBreaks} />
           </div>
         </div>
 

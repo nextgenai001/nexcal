@@ -1,4 +1,5 @@
 import { requireTenant } from "@/lib/rbac";
+import { prisma } from "@/lib/prisma";
 import EventTypeForm from "../EventTypeForm";
 
 export const metadata = {
@@ -6,7 +7,12 @@ export const metadata = {
 };
 
 export default async function NewEventTypePage() {
-  await requireTenant();
+  const user = await requireTenant();
+
+  const availabilitySchedules = await prisma.availabilitySchedule.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "asc" }
+  });
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -16,7 +22,7 @@ export default async function NewEventTypePage() {
       </div>
       
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <EventTypeForm />
+        <EventTypeForm availabilitySchedules={availabilitySchedules} />
       </div>
     </div>
   );
