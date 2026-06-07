@@ -36,6 +36,18 @@ export default async function AdminUsersPage({
         select: {
           bookings: true,
           eventTypes: true,
+          webhookEndpoints: true,
+        },
+      },
+      webhookEndpoints: {
+        select: {
+          _count: {
+            select: {
+              deliveries: {
+                where: { status: "SUCCESS" },
+              },
+            },
+          },
         },
       },
     },
@@ -107,6 +119,9 @@ export default async function AdminUsersPage({
                   <th className="px-5 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Bookings
                   </th>
+                  <th className="px-5 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Webhooks
+                  </th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Joined
                   </th>
@@ -170,6 +185,27 @@ export default async function AdminUsersPage({
                       <span className="text-sm font-semibold text-slate-300">
                         {user._count.bookings}
                       </span>
+                    </td>
+
+                    {/* Webhooks count */}
+                    <td className="px-5 py-3.5 text-center">
+                      {(() => {
+                        const endpoints = user._count.webhookEndpoints;
+                        const deliveries = user.webhookEndpoints.reduce(
+                          (acc, curr) => acc + curr._count.deliveries,
+                          0
+                        );
+                        return (
+                          <div>
+                            <span className="text-sm font-semibold text-slate-300">
+                              {endpoints}
+                            </span>
+                            <span className="text-xs text-slate-500 ml-1">
+                              ({deliveries})
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     {/* Created */}
