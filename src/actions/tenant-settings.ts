@@ -10,6 +10,8 @@ export async function updateTenantProfileAction(prevState: any, formData: FormDa
     
     const businessName = formData.get("businessName") as string;
     const timezone = formData.get("timezone") as string;
+    const weekStart = parseInt(formData.get("weekStart") as string, 10);
+    const dateFormat = formData.get("dateFormat") as string;
     
     if (!timezone) {
       throw new Error("Timezone is required");
@@ -20,6 +22,8 @@ export async function updateTenantProfileAction(prevState: any, formData: FormDa
       data: {
         businessName,
         timezone,
+        weekStart,
+        dateFormat,
       },
     });
 

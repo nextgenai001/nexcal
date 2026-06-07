@@ -54,6 +54,8 @@ export default async function EditTenantPage({ params }: PageProps) {
     email: user.email,
     businessName: user.businessName,
     timezone: user.timezone,
+    weekStart: user.weekStart,
+    dateFormat: user.dateFormat,
     isActive: user.isActive,
     createdAt: user.createdAt.toISOString(),
     bookingCount: user._count.bookings,

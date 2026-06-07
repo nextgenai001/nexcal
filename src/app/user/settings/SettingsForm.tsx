@@ -39,6 +39,39 @@ export default function SettingsForm({ user }: { user: any }) {
         />
       </div>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="weekStart" className="block text-sm font-medium text-slate-300">Start Day of the Week</label>
+          <select
+            id="weekStart"
+            name="weekStart"
+            defaultValue={user.weekStart}
+            required
+            className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+          >
+            <option value="1">Monday (Recommended)</option>
+            <option value="0">Sunday</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="dateFormat" className="block text-sm font-medium text-slate-300">Date Format</label>
+          <select
+            id="dateFormat"
+            name="dateFormat"
+            defaultValue={user.dateFormat}
+            required
+            className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+          >
+            <option value="MM/dd/yyyy">MM/DD/YYYY (e.g. 12/25/2026)</option>
+            <option value="dd/MM/yyyy">DD/MM/YYYY (e.g. 25/12/2026)</option>
+            <option value="yyyy-MM-dd">YYYY-MM-DD (e.g. 2026-12-25)</option>
+            <option value="MM/dd/yy">MM/DD/YY (e.g. 12/25/26)</option>
+            <option value="dd/MM/yy">DD/MM/YY (e.g. 25/12/26)</option>
+          </select>
+        </div>
+      </div>
+
       <div className="pt-4 flex justify-end">
         <button
           type="submit"

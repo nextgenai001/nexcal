@@ -29,6 +29,8 @@ const createTenantSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   timezone: z.string().min(1, "Timezone is required"),
   businessName: z.string().optional(),
+  weekStart: z.number().int().min(0).max(6).default(1),
+  dateFormat: z.string().min(1).default("MM/dd/yyyy"),
 });
 
 const updateTenantSchema = z.object({
@@ -36,6 +38,8 @@ const updateTenantSchema = z.object({
   email: z.string().email("Invalid email address"),
   businessName: z.string().optional(),
   timezone: z.string().min(1, "Timezone is required"),
+  weekStart: z.number().int().min(0).max(6).default(1),
+  dateFormat: z.string().min(1).default("MM/dd/yyyy"),
 });
 
 const resetPasswordSchema = z.object({
@@ -92,6 +96,8 @@ export async function createTenantAction(
       password: formData.get("password"),
       timezone: formData.get("timezone"),
       businessName: formData.get("businessName") || undefined,
+      weekStart: parseInt(formData.get("weekStart") as string, 10),
+      dateFormat: formData.get("dateFormat") as string || "MM/dd/yyyy",
     };
 
     const parsed = createTenantSchema.safeParse(raw);
@@ -100,7 +106,7 @@ export async function createTenantAction(
       return { error: firstError };
     }
 
-    const { name, username, email, password, timezone, businessName } = parsed.data;
+    const { name, username, email, password, timezone, businessName, weekStart, dateFormat } = parsed.data;
 
     // Check username uniqueness
     const existingUsername = await prisma.user.findUnique({ where: { username } });
@@ -128,6 +134,8 @@ export async function createTenantAction(
         businessName: businessName ?? null,
         role: "TENANT",
         isActive: true,
+        weekStart,
+        dateFormat,
       },
     });
 
@@ -167,6 +175,8 @@ export async function updateTenantAction(
       email: (formData.get("email") as string | null)?.toLowerCase() ?? "",
       businessName: formData.get("businessName") || undefined,
       timezone: formData.get("timezone"),
+      weekStart: parseInt(formData.get("weekStart") as string, 10),
+      dateFormat: formData.get("dateFormat") as string || "MM/dd/yyyy",
     };
 
     const parsed = updateTenantSchema.safeParse(raw);
@@ -175,7 +185,7 @@ export async function updateTenantAction(
       return { error: firstError };
     }
 
-    const { name, email, businessName, timezone } = parsed.data;
+    const { name, email, businessName, timezone, weekStart, dateFormat } = parsed.data;
 
     // Ensure tenant exists and is indeed a TENANT
     const existing = await prisma.user.findUnique({ where: { id: tenantId } });
@@ -198,6 +208,8 @@ export async function updateTenantAction(
         email,
         businessName: businessName ?? null,
         timezone,
+        weekStart,
+        dateFormat,
       },
     });
 

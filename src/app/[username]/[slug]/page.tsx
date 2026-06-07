@@ -29,7 +29,9 @@ export default async function BookingPage({ params, searchParams }: Props) {
           businessName: true,
           name: true,
           businessLogo: true,
-          timezone: true
+          timezone: true,
+          weekStart: true,
+          dateFormat: true
         }
       });
     } catch (e) {
@@ -46,7 +48,9 @@ export default async function BookingPage({ params, searchParams }: Props) {
         businessName: true,
         name: true,
         businessLogo: true,
-        timezone: true
+        timezone: true,
+        weekStart: true,
+        dateFormat: true
       }
     });
   }

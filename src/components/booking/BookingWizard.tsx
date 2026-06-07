@@ -29,6 +29,8 @@ interface Props {
     businessName: string | null;
     name: string;
     businessLogo: string | null;
+    weekStart?: number;
+    dateFormat?: string;
   };
   eventType: {
     slug: string;
@@ -131,7 +133,9 @@ export default function BookingWizard({ user, eventType }: Props) {
     end: endOfMonth(currentMonth)
   });
   const firstDayOfMonth = startOfMonth(currentMonth).getDay();
-  const paddingDays = Array.from({ length: firstDayOfMonth }).map((_, i) => i);
+  const weekStart = user.weekStart ?? 1; // Default to Monday (1)
+  const paddingCount = (firstDayOfMonth - weekStart + 7) % 7;
+  const paddingDays = Array.from({ length: paddingCount }).map((_, i) => i);
 
   // Group slots by local date string
   const slotsByDate = useMemo(() => {
@@ -237,7 +241,7 @@ export default function BookingWizard({ user, eventType }: Props) {
             </svg>
             <div>
               <div className="text-blue-600">
-                {formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, 'EEEE, MMMM d, yyyy')}
+                {formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, 'EEEE, ') + formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, user.dateFormat ?? 'MM/dd/yyyy')}
               </div>
               <div className="text-slate-500 text-sm mt-1">
                 {formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, 'h:mm a')} (Local Time)
@@ -286,7 +290,9 @@ export default function BookingWizard({ user, eventType }: Props) {
               </div>
 
               <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                {(user.weekStart === 1 ? ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]).map((day) => (
+                  <div key={day}>{day}</div>
+                ))}
               </div>
 
               <div className="grid grid-cols-7 gap-1">
@@ -347,7 +353,7 @@ export default function BookingWizard({ user, eventType }: Props) {
             {selectedDate && (
               <div className="w-full md:w-48 flex flex-col h-[400px]">
                 <h3 className="font-semibold text-slate-800 mb-4 text-center md:text-left">
-                  {format(selectedDate, 'EEEE, MMM d')}
+                  {format(selectedDate, 'EEEE, ') + format(selectedDate, user.dateFormat ?? 'MM/dd/yyyy')}
                 </h3>
                 <div className="flex-1 overflow-y-auto pr-2 space-y-2 pb-4 scrollbar-thin">
                   {loadingSlots ? (

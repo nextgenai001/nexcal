@@ -46,6 +46,8 @@ model User {
   isActive       Boolean   @default(true)   @map("is_active")
   globalBreaks   Json      @default("[]")   @map("global_breaks")
   embedViews     Int       @default(0)      @map("embed_views")
+  weekStart      Int       @default(1)      @map("week_start")
+  dateFormat     String    @default("MM/dd/yyyy") @map("date_format")
 
   createdAt      DateTime  @default(now())  @map("created_at")
   updatedAt      DateTime  @updatedAt       @map("updated_at")

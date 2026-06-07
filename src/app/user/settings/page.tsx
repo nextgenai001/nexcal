@@ -17,6 +17,8 @@ export default async function SettingsPage() {
       username: true,
       businessName: true,
       timezone: true,
+      weekStart: true,
+      dateFormat: true,
     },
   });
 

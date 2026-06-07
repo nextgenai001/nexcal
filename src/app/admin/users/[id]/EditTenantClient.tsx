@@ -31,6 +31,8 @@ interface TenantData {
   email: string;
   businessName: string | null;
   timezone: string;
+  weekStart: number;
+  dateFormat: string;
   isActive: boolean;
   createdAt: string;
   bookingCount: number;
@@ -222,6 +224,43 @@ export default function EditTenantClient({ tenant }: { tenant: TenantData }) {
               defaultValue={tenant.timezone}
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="weekStart" className="block text-xs font-medium text-slate-400">
+                Start Day of the Week <span className="text-red-400">*</span>
+              </label>
+              <select
+                id="weekStart"
+                name="weekStart"
+                defaultValue={tenant.weekStart}
+                required
+                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/40"
+              >
+                <option value="1">Monday (Recommended)</option>
+                <option value="0">Sunday</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="dateFormat" className="block text-xs font-medium text-slate-400">
+                Date Format <span className="text-red-400">*</span>
+              </label>
+              <select
+                id="dateFormat"
+                name="dateFormat"
+                defaultValue={tenant.dateFormat}
+                required
+                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/40"
+              >
+                <option value="MM/dd/yyyy">MM/DD/YYYY (e.g. 12/25/2026)</option>
+                <option value="dd/MM/yyyy">DD/MM/YYYY (e.g. 25/12/2026)</option>
+                <option value="yyyy-MM-dd">YYYY-MM-DD (e.g. 2026-12-25)</option>
+                <option value="MM/dd/yy">MM/DD/YY (e.g. 12/25/26)</option>
+                <option value="dd/MM/yy">DD/MM/YY (e.g. 25/12/26)</option>
+              </select>
+            </div>
           </div>
 
           <button
