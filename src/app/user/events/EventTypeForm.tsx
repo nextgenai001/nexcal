@@ -41,7 +41,7 @@ export default function EventTypeForm({
   });
 
   // Custom widget customization states
-  const [name, setName] = useState(eventType?.name || "15-Minute Consultation");
+  const [name, setName] = useState(eventType?.name || "");
   const [duration, setDuration] = useState(eventType?.duration || 15);
   const [description, setDescription] = useState(eventType?.description || "");
   const [bookingButtonText, setBookingButtonText] = useState(customFieldsData?.bookingButtonText || "Schedule Event");
