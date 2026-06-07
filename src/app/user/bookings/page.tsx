@@ -51,6 +51,36 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
     orderBy: { startTime: "desc" },
   });
 
+  const nextUpcoming = await prisma.booking.findFirst({
+    where: {
+      userId: user.id,
+      startTime: { gte: now },
+      status: {
+        in: [BookingStatus.CONFIRMED, BookingStatus.PENDING]
+      }
+    },
+    include: { eventType: true },
+    orderBy: { startTime: "asc" },
+  });
+
+  let timeRemainingStr = "";
+  if (nextUpcoming) {
+    const diffMs = nextUpcoming.startTime.getTime() - now.getTime();
+    const totalMinutes = Math.max(0, Math.floor(diffMs / (1000 * 60)));
+    const totalHours = Math.floor(totalMinutes / 60);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+      timeRemainingStr = `${days} day${days > 1 ? "s" : ""} and ${hours} hour${hours !== 1 ? "s" : ""} remaining`;
+    } else if (hours > 0) {
+      timeRemainingStr = `${hours} hour${hours > 1 ? "s" : ""} and ${minutes} minute${minutes !== 1 ? "s" : ""} remaining`;
+    } else {
+      timeRemainingStr = `${minutes} minute${minutes !== 1 ? "s" : ""} remaining`;
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -65,6 +95,30 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
           Add Booking
         </Link>
       </div>
+
+      {nextUpcoming && (
+        <div className="relative overflow-hidden rounded-xl border border-indigo-500/20 bg-gradient-to-r from-slate-900 via-indigo-950/20 to-slate-900 p-6 shadow-xl">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-400">
+                <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                Next Upcoming Meeting
+              </span>
+              <h3 className="text-lg font-bold text-white mt-2">
+                With {nextUpcoming.customerName} &bull; {nextUpcoming.eventType.name}
+              </h3>
+              <p className="text-sm text-slate-400">
+                {format(nextUpcoming.startTime, "EEEE, MMMM d")} at {format(nextUpcoming.startTime, "h:mm a")} (UTC)
+              </p>
+            </div>
+            <div className="rounded-lg bg-slate-950/50 border border-slate-800/80 px-5 py-3 text-center sm:text-right shrink-0">
+              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Countdown</div>
+              <div className="text-base font-bold text-indigo-400 mt-0.5">{timeRemainingStr}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
         <BookingFilterTabs currentTab={currentTab} q={q} status={status} />
