@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
+import { runTimezoneMigrationPipeline } from "@/lib/timezone-pipeline";
 
 export async function updateTenantProfileAction(prevState: any, formData: FormData) {
   try {

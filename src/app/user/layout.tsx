@@ -20,6 +20,7 @@ export default async function UserLayout({
       name: true,
       username: true,
       businessName: true,
+      timezone: true,
     },
   });
 
@@ -27,7 +28,7 @@ export default async function UserLayout({
 
   return (
     <div className="flex h-screen bg-slate-950 text-white">
-      <UserSidebar username={user.username} />
+      <UserSidebar username={user.username} timezone={user.timezone} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <UserHeader user={user} />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>

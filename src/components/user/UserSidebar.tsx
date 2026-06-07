@@ -76,9 +76,10 @@ const navItems = [
 
 interface UserSidebarProps {
   username: string;
+  timezone: string;
 }
 
-export default function UserSidebar({ username }: UserSidebarProps) {
+export default function UserSidebar({ username, timezone }: UserSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -246,7 +247,13 @@ export default function UserSidebar({ username }: UserSidebarProps) {
 
         {/* Footer */}
         {!collapsed && (
-          <div className="border-t border-slate-800 px-5 py-3">
+          <div className="border-t border-slate-800 px-5 py-4 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <svg className="h-3.5 w-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              <span className="truncate" title={timezone}>{timezone}</span>
+            </div>
             <p className="text-[10px] text-slate-600">NexCal v3.0</p>
           </div>
         )}

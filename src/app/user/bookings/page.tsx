@@ -11,7 +11,12 @@ export const metadata = {
 };
 
 export default async function BookingsPage({ searchParams }: { searchParams: Promise<{ status?: string, q?: string, tab?: string, sortBy?: string }> }) {
-  const user = await requireTenant();
+  const sessionUser = await requireTenant();
+  const dbUser = await prisma.user.findUnique({
+    where: { id: sessionUser.id },
+    select: { timezone: true },
+  });
+  const user = dbUser ? { ...sessionUser, ...dbUser } : sessionUser;
   const resolvedParams = await searchParams;
   
   const currentTab = resolvedParams.tab || "upcoming";
