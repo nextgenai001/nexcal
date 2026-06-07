@@ -37,6 +37,7 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
     const formData = new FormData(e.currentTarget);
     const query = formData.get("q") as string;
     const statusVal = formData.get("status") as string;
+    const sortByVal = formData.get("sortBy") as string;
 
     const params = new URLSearchParams(searchParams.toString());
     if (query) params.set("q", query);
@@ -45,6 +46,9 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
     if (statusVal && statusVal !== "ALL") params.set("status", statusVal);
     else params.delete("status");
 
+    if (sortByVal) params.set("sortBy", sortByVal);
+    else params.delete("sortBy");
+
     router.push(`/user/bookings?${params.toString()}`);
   };
 
@@ -52,10 +56,11 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
     const params = new URLSearchParams(searchParams.toString());
     params.delete("q");
     params.delete("status");
+    params.delete("sortBy");
     router.push(`/user/bookings?${params.toString()}`);
   };
 
-  const hasActiveFilters = q || status !== "ALL";
+  const hasActiveFilters = q || status !== "ALL" || !!searchParams.get("sortBy");
 
   return (
     <div>
@@ -93,7 +98,7 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.24 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
               </svg>
-              Filter
+              Filter & Sort
             </button>
           </div>
         </div>
@@ -108,11 +113,11 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
         )}
       </div>
 
-      {/* Expandable filter/search panel */}
+      {/* Expandable filter/search/sort panel */}
       {(showFilterPanel || hasActiveFilters) && (
         <div className="border-b border-slate-800 bg-slate-900/40 p-4 transition-all duration-200">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1 max-w-md">
+          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center flex-wrap">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
@@ -138,11 +143,22 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
               <option value="COMPLETED">Completed</option>
               <option value="NO_SHOW">No Show</option>
             </select>
+            <select
+              name="sortBy"
+              defaultValue={searchParams.get("sortBy") || ""}
+              className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors"
+            >
+              <option value="">Default Sort</option>
+              <option value="startTime-asc">Time (Nearest first)</option>
+              <option value="startTime-desc">Time (Furthest first)</option>
+              <option value="customerName-asc">Customer Name (A-Z)</option>
+              <option value="customerName-desc">Customer Name (Z-A)</option>
+            </select>
             <button
               type="submit"
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors cursor-pointer"
             >
-              Apply Filter
+              Apply Filter & Sort
             </button>
           </form>
         </div>

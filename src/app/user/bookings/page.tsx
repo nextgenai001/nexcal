@@ -9,13 +9,35 @@ export const metadata = {
   title: "Bookings - NexCal",
 };
 
-export default async function BookingsPage({ searchParams }: { searchParams: Promise<{ status?: string, q?: string, tab?: string }> }) {
+export default async function BookingsPage({ searchParams }: { searchParams: Promise<{ status?: string, q?: string, tab?: string, sortBy?: string }> }) {
   const user = await requireTenant();
   const resolvedParams = await searchParams;
   
   const currentTab = resolvedParams.tab || "upcoming";
   const status = resolvedParams.status || "ALL";
   const q = resolvedParams.q || "";
+  let sortBy = resolvedParams.sortBy || "";
+
+  // Determine default sort if not specified
+  if (!sortBy) {
+    if (currentTab === "upcoming" || currentTab === "unconfirmed") {
+      sortBy = "startTime-asc"; // Nearest first
+    } else {
+      sortBy = "startTime-desc"; // Furthest/newest past first
+    }
+  }
+
+  // Parse sort order
+  let orderBy: any = { startTime: "desc" };
+  if (sortBy === "startTime-asc") {
+    orderBy = { startTime: "asc" };
+  } else if (sortBy === "startTime-desc") {
+    orderBy = { startTime: "desc" };
+  } else if (sortBy === "customerName-asc") {
+    orderBy = { customerName: "asc" };
+  } else if (sortBy === "customerName-desc") {
+    orderBy = { customerName: "desc" };
+  }
 
   const where: any = { userId: user.id };
   const now = new Date();
@@ -48,7 +70,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   const bookings = await prisma.booking.findMany({
     where,
     include: { eventType: true },
-    orderBy: { startTime: "desc" },
+    orderBy,
   });
 
   const nextUpcoming = await prisma.booking.findFirst({
