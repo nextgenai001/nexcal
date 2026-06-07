@@ -3,6 +3,7 @@
 import { useActionState, useState, useEffect } from "react";
 import { createEventTypeAction, updateEventTypeAction } from "@/actions/event-types";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function EventTypeForm({ 
   eventType,
@@ -91,6 +92,7 @@ export default function EventTypeForm({
   };
 
   const [slug, setSlug] = useState(eventType?.slug || "");
+  const [bookOnce, setBookOnce] = useState(eventType ? eventType.bookOnce : true);
   const [hasDateRange, setHasDateRange] = useState(!!(eventType?.startDate || eventType?.endDate));
   const [startDate, setStartDate] = useState(() => {
     if (!eventType?.startDate) return "";
@@ -268,6 +270,21 @@ export default function EventTypeForm({
           </div>
 
           <div className="pt-4 border-t border-slate-800 space-y-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="bookOnce"
+                name="bookOnce"
+                value="true"
+                checked={bookOnce}
+                onChange={(e) => setBookOnce(e.target.checked)}
+                className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label htmlFor="bookOnce" className="text-sm font-medium text-slate-300">
+                Book Once (Prevent multiple active bookings by same customer email)
+              </label>
+            </div>
+
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -508,6 +525,44 @@ export default function EventTypeForm({
             </div>
           </div>
         </div>
+
+        {eventType && (
+          <div className="space-y-4 bg-slate-900/40 p-6 rounded-2xl border border-slate-800">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-lg font-bold text-white">Event Webhooks</h2>
+                <p className="text-xs text-slate-400">Webhooks triggered specifically for this event</p>
+              </div>
+              <Link
+                href={`/user/webhooks/new?eventTypeId=${eventType.id}`}
+                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
+              >
+                Add Webhook
+              </Link>
+            </div>
+
+            {(!eventType.webhookEndpoints || eventType.webhookEndpoints.length === 0) ? (
+              <p className="text-sm text-slate-500">No specific webhooks configured for this event type.</p>
+            ) : (
+              <div className="space-y-3">
+                {eventType.webhookEndpoints.map((webhook: any) => (
+                  <div key={webhook.id} className="flex items-center justify-between p-3 border border-slate-800 rounded-lg bg-slate-800/30">
+                    <div className="truncate pr-4 flex-1">
+                      <p className="text-sm font-medium text-white truncate" title={webhook.url}>{webhook.url}</p>
+                      <p className="text-xs text-slate-500 mt-1">Events: {webhook.events.join(", ")}</p>
+                    </div>
+                    <Link
+                      href={`/user/webhooks/${webhook.id}/edit`}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 shrink-0"
+                    >
+                      Edit
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-800 bg-slate-900/20 p-4 rounded-xl">
           <button

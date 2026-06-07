@@ -1,12 +1,23 @@
 import { requireTenant } from "@/lib/rbac";
+import { prisma } from "@/lib/prisma";
 import WebhookForm from "./WebhookForm";
 
 export const metadata = {
   title: "Add Webhook - NexCal",
 };
 
-export default async function NewWebhookPage() {
-  await requireTenant();
+export default async function NewWebhookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ eventTypeId?: string }>;
+}) {
+  const user = await requireTenant();
+  const { eventTypeId } = await searchParams;
+
+  const eventTypes = await prisma.eventType.findMany({
+    where: { userId: user.id },
+    orderBy: { name: "asc" }
+  });
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -16,7 +27,7 @@ export default async function NewWebhookPage() {
       </div>
 
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <WebhookForm />
+        <WebhookForm eventTypes={eventTypes} defaultEventTypeId={eventTypeId} />
       </div>
     </div>
   );

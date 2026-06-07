@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useEffect } from "react";
-import { createWebhookAction } from "@/actions/webhook-actions";
+import { createWebhookAction, updateWebhookAction } from "@/actions/webhook-actions";
 import { useRouter } from "next/navigation";
 
 const AVAILABLE_EVENTS = [
@@ -12,10 +12,26 @@ const AVAILABLE_EVENTS = [
   "BOOKING_NO_SHOW",
 ];
 
-export default function WebhookForm() {
+interface WebhookFormProps {
+  webhook?: any;
+  eventTypes?: any[];
+  defaultEventTypeId?: string;
+}
+
+export default function WebhookForm({
+  webhook,
+  eventTypes = [],
+  defaultEventTypeId,
+}: WebhookFormProps) {
   const router = useRouter();
-  const [secret, setSecret] = useState("");
-  const [state, formAction, isPending] = useActionState(createWebhookAction, { success: false, error: null });
+  const [secret, setSecret] = useState(webhook?.secret || "");
+  const [copied, setCopied] = useState(false);
+
+  const action = webhook
+    ? updateWebhookAction.bind(null, webhook.id)
+    : createWebhookAction;
+
+  const [state, formAction, isPending] = useActionState(action, { success: false, error: null });
 
   useEffect(() => {
     if (state.success) {
@@ -27,6 +43,14 @@ export default function WebhookForm() {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
     setSecret(Array.from(array, byte => byte.toString(16).padStart(2, '0')).join(''));
+  };
+
+  const copySecret = () => {
+    if (secret) {
+      navigator.clipboard.writeText(secret);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
@@ -43,20 +67,49 @@ export default function WebhookForm() {
           type="url"
           name="url"
           required
+          defaultValue={webhook?.url || ""}
           placeholder="https://your-domain.com/webhook"
           className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-slate-300">Trigger Event Filter</label>
+        <select
+          name="eventTypeId"
+          defaultValue={webhook?.eventTypeId || defaultEventTypeId || "all"}
+          className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+          <option value="all">All Events (Global)</option>
+          {eventTypes.map((et) => (
+            <option key={et.id} value={et.id}>
+              Only: {et.name}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-slate-500">Choose if this webhook triggers for all event types or a specific one.</p>
+      </div>
+
+      <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-slate-300">Secret</label>
+          <div className="flex items-center gap-2">
+            <label className="block text-sm font-medium text-slate-300">Secret</label>
+            {secret && (
+              <button
+                type="button"
+                onClick={copySecret}
+                className="text-xs text-indigo-400 hover:text-indigo-300"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            )}
+          </div>
           <button
             type="button"
             onClick={generateSecret}
             className="text-xs text-indigo-400 hover:text-indigo-300"
           >
-            Generate Secret
+            {webhook ? "Change Secret" : "Generate Secret"}
           </button>
         </div>
         <input
@@ -80,6 +133,7 @@ export default function WebhookForm() {
                 name="events"
                 value={event}
                 id={`event-${event}`}
+                defaultChecked={webhook ? webhook.events.includes(event) : true}
                 className="rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500"
               />
               <label htmlFor={`event-${event}`} className="text-sm text-slate-300 cursor-pointer">
@@ -103,7 +157,7 @@ export default function WebhookForm() {
           disabled={isPending}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
         >
-          {isPending ? "Saving..." : "Add Webhook"}
+          {isPending ? "Saving..." : webhook ? "Save Webhook" : "Add Webhook"}
         </button>
       </div>
     </form>

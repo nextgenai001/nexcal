@@ -14,6 +14,7 @@ export default async function EditEventTypePage({ params }: { params: Promise<{ 
   const [eventType, availabilitySchedules] = await Promise.all([
     prisma.eventType.findFirst({
       where: { id, userId: user.id },
+      include: { webhookEndpoints: true },
     }),
     prisma.availabilitySchedule.findMany({
       where: { userId: user.id },

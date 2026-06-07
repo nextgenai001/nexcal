@@ -16,7 +16,19 @@ export async function dispatchWebhookEvent(
   bookingId?: string
 ) {
   try {
+    let eventTypeId: string | null = null;
+    if (bookingId) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { eventTypeId: true },
+      });
+      if (booking) {
+        eventTypeId = booking.eventTypeId;
+      }
+    }
+
     // Find active WebhookEndpoints for the userId where events array includes the event
+    // and the eventTypeId is either null (global) or matches the booking's eventTypeId
     const endpoints = await prisma.webhookEndpoint.findMany({
       where: {
         userId,
@@ -24,6 +36,12 @@ export async function dispatchWebhookEvent(
         events: {
           has: event,
         },
+        OR: eventTypeId ? [
+          { eventTypeId: null },
+          { eventTypeId: eventTypeId }
+        ] : [
+          { eventTypeId: null }
+        ]
       },
     });
 

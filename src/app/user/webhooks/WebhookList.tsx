@@ -43,6 +43,17 @@ export default function WebhookList({ webhooks }: { webhooks: any[] }) {
             </label>
           </div>
 
+          <div className="mb-4">
+            <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Trigger Filter</p>
+            <span className={`inline-block rounded px-2.5 py-1 text-xs font-medium ${
+              webhook.eventType 
+                ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" 
+                : "bg-slate-800 text-slate-300"
+            }`}>
+              {webhook.eventType ? `Only: ${webhook.eventType.name}` : "All Events (Global)"}
+            </span>
+          </div>
+
           <div className="mb-6">
             <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Events</p>
             <div className="flex flex-wrap gap-2">
@@ -54,13 +65,21 @@ export default function WebhookList({ webhooks }: { webhooks: any[] }) {
             </div>
           </div>
 
-          <div className="flex justify-between items-center border-t border-slate-800 pt-4">
-            <Link
-              href={`/user/webhooks/${webhook.id}/logs`}
-              className="text-sm text-indigo-400 hover:text-indigo-300"
-            >
-              View Delivery Logs
-            </Link>
+          <div className="flex justify-between items-center border-t border-slate-800 pt-4 gap-2">
+            <div className="flex gap-4">
+              <Link
+                href={`/user/webhooks/${webhook.id}/logs`}
+                className="text-sm text-indigo-400 hover:text-indigo-300"
+              >
+                Logs
+              </Link>
+              <Link
+                href={`/user/webhooks/${webhook.id}/edit`}
+                className="text-sm text-slate-300 hover:text-white"
+              >
+                Edit
+              </Link>
+            </div>
             <button
               onClick={() => handleDelete(webhook.id)}
               disabled={isPending}

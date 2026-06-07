@@ -120,6 +120,25 @@ export async function submitBookingAction(
 
     const { name, email, phone, guests, meeting_about, notes, ...customFieldData } = formData;
 
+    if (eventType.bookOnce && email) {
+      const upcomingBooking = await prisma.booking.findFirst({
+        where: {
+          eventTypeId: eventType.id,
+          customerEmail: email,
+          startTime: {
+            gt: new Date(),
+          },
+          status: {
+            not: 'CANCELLED',
+          },
+        },
+      });
+
+      if (upcomingBooking) {
+        return { error: 'You already have an upcoming booking for this event. You can reschedule or cancel it using the link in your email.' };
+      }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         userId: user.id,

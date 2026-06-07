@@ -12,6 +12,7 @@ export default async function WebhooksPage() {
 
   const webhooks = await prisma.webhookEndpoint.findMany({
     where: { userId: user.id },
+    include: { eventType: true },
     orderBy: { createdAt: "desc" },
   });
 

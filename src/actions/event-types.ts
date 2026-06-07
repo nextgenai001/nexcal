@@ -42,6 +42,7 @@ export async function createEventTypeAction(prevState: any, formData: FormData) 
     const startDateRaw = formData.get("startDate") as string;
     const endDateRaw = formData.get("endDate") as string;
     const availabilityScheduleId = (formData.get("availabilityScheduleId") as string) || null;
+    const bookOnce = formData.get("bookOnce") === "true" || formData.get("bookOnce") === "on";
 
     const startDate = hasDateRange && startDateRaw ? new Date(startDateRaw) : null;
     const endDate = hasDateRange && endDateRaw ? new Date(endDateRaw) : null;
@@ -68,6 +69,7 @@ export async function createEventTypeAction(prevState: any, formData: FormData) 
         customFields,
         startDate,
         endDate,
+        bookOnce,
         userId: user.id,
         availabilityScheduleId,
       },
@@ -97,6 +99,7 @@ export async function updateEventTypeAction(id: string, prevState: any, formData
     const startDateRaw = formData.get("startDate") as string;
     const endDateRaw = formData.get("endDate") as string;
     const availabilityScheduleId = (formData.get("availabilityScheduleId") as string) || null;
+    const bookOnce = formData.get("bookOnce") === "true" || formData.get("bookOnce") === "on";
 
     const startDate = hasDateRange && startDateRaw ? new Date(startDateRaw) : null;
     const endDate = hasDateRange && endDateRaw ? new Date(endDateRaw) : null;
@@ -124,6 +127,7 @@ export async function updateEventTypeAction(id: string, prevState: any, formData
         customFields,
         startDate,
         endDate,
+        bookOnce,
         availabilityScheduleId,
       },
     });

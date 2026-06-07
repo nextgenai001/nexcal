@@ -106,10 +106,12 @@ model EventType {
   maxBookingsPerDay Int?     @map("max_bookings_per_day")
   startDate        DateTime? @map("start_date")
   endDate          DateTime? @map("end_date")
+  bookOnce         Boolean   @default(true) @map("book_once")
 
   userId           String    @map("user_id")
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookings         Booking[]
+  webhookEndpoints WebhookEndpoint[]
 
   availabilityScheduleId String? @map("availability_schedule_id")
   availabilitySchedule   AvailabilitySchedule? @relation(fields: [availabilityScheduleId], references: [id], onDelete: SetNull)
@@ -206,6 +208,9 @@ model WebhookEndpoint {
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveries WebhookDelivery[]
+
+  eventTypeId String?  @map("event_type_id")
+  eventType   EventType? @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
