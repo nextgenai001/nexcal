@@ -7,17 +7,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 interface BookingFilterTabsProps {
   currentTab: string;
   q: string;
-  status: string;
 }
 
 const tabs = [
   { id: "upcoming", label: "Upcoming" },
   { id: "unconfirmed", label: "Unconfirmed" },
+  { id: "confirmed", label: "Confirmed" },
   { id: "past", label: "Past" },
+  { id: "completed", label: "Completed" },
   { id: "canceled", label: "Canceled" },
+  { id: "no_show", label: "No Show" },
 ];
 
-export default function BookingFilterTabs({ currentTab, q, status }: BookingFilterTabsProps) {
+export default function BookingFilterTabs({ currentTab, q }: BookingFilterTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -36,16 +38,24 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const query = formData.get("q") as string;
-    const statusVal = formData.get("status") as string;
     const sortByVal = formData.get("sortBy") as string;
 
     const params = new URLSearchParams(searchParams.toString());
     if (query) params.set("q", query);
     else params.delete("q");
 
-    if (statusVal && statusVal !== "ALL") params.set("status", statusVal);
-    else params.delete("status");
+    if (sortByVal) params.set("sortBy", sortByVal);
+    else params.delete("sortBy");
 
+    router.push(`/user/bookings?${params.toString()}`);
+  };
+
+  const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const sortByVal = formData.get("sortBy") as string;
+
+    const params = new URLSearchParams(searchParams.toString());
     if (sortByVal) params.set("sortBy", sortByVal);
     else params.delete("sortBy");
 
@@ -55,19 +65,18 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
   const clearAllFilters = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("q");
-    params.delete("status");
     params.delete("sortBy");
     router.push(`/user/bookings?${params.toString()}`);
   };
 
-  const hasActiveFilters = q || status !== "ALL" || !!searchParams.get("sortBy");
+  const hasActiveFilters = !!q || !!searchParams.get("sortBy");
 
   return (
     <div>
       {/* Tab bar container */}
       <div className="flex flex-col gap-4 border-b border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between bg-slate-950/20">
-        <div className="flex flex-wrap items-center gap-1">
-          <div className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-1">
+        <div className="flex flex-wrap items-center gap-1.5 flex-1">
+          <div className="inline-flex flex-wrap items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-1">
             {tabs.map((tab) => {
               const isActive = currentTab === tab.id;
               return (
@@ -90,7 +99,7 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
             <button
               onClick={() => setShowFilterPanel(!showFilterPanel)}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150 ${
-                showFilterPanel || hasActiveFilters
+                showFilterPanel
                   ? "bg-indigo-600/15 text-indigo-400 ring-1 ring-indigo-500/30"
                   : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-200"
               }`}
@@ -103,46 +112,37 @@ export default function BookingFilterTabs({ currentTab, q, status }: BookingFilt
           </div>
         </div>
 
-        {hasActiveFilters && (
-          <button
-            onClick={clearAllFilters}
-            className="text-xs font-medium text-slate-400 hover:text-white transition-colors"
-          >
-            Clear active filters
-          </button>
-        )}
+        <div className="flex items-center gap-4">
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="text-xs font-medium text-slate-400 hover:text-white transition-colors"
+            >
+              Clear filters
+            </button>
+          )}
+
+          <form onSubmit={handleSearchSubmit} className="relative w-full max-w-xs">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder="Search..."
+              className="w-full rounded-lg border border-slate-800 bg-slate-950/50 py-1.5 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors"
+            />
+          </form>
+        </div>
       </div>
 
-      {/* Expandable filter/search/sort panel */}
-      {(showFilterPanel || hasActiveFilters) && (
-        <div className="border-b border-slate-800 bg-slate-900/40 p-4 transition-all duration-200">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center flex-wrap">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
-                </svg>
-              </span>
-              <input
-                type="text"
-                name="q"
-                defaultValue={q}
-                placeholder="Search by name or email..."
-                className="w-full rounded-lg border border-slate-800 bg-slate-950/50 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors"
-              />
-            </div>
-            <select
-              name="status"
-              defaultValue={status}
-              className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="NO_SHOW">No Show</option>
-            </select>
+      {/* Expandable filter/sort panel (only sort options) */}
+      {showFilterPanel && (
+        <div className="border-b border-slate-800 bg-slate-900/40 p-4 transition-all duration-200 animate-fadeIn">
+          <form onSubmit={handleFilterSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <select
               name="sortBy"
               defaultValue={searchParams.get("sortBy") || ""}

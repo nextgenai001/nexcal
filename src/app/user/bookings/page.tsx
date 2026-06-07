@@ -10,7 +10,7 @@ export const metadata = {
   title: "Bookings - NexCal",
 };
 
-export default async function BookingsPage({ searchParams }: { searchParams: Promise<{ status?: string, q?: string, tab?: string, sortBy?: string }> }) {
+export default async function BookingsPage({ searchParams }: { searchParams: Promise<{ q?: string, tab?: string, sortBy?: string }> }) {
   const sessionUser = await requireTenant();
   const dbUser = await prisma.user.findUnique({
     where: { id: sessionUser.id },
@@ -20,7 +20,6 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   const resolvedParams = await searchParams;
   
   const currentTab = resolvedParams.tab || "upcoming";
-  const status = resolvedParams.status || "ALL";
   const q = resolvedParams.q || "";
   let sortBy = resolvedParams.sortBy || "";
 
@@ -54,16 +53,17 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
     where.status = { not: BookingStatus.CANCELLED };
   } else if (currentTab === "unconfirmed") {
     where.status = BookingStatus.PENDING;
+  } else if (currentTab === "confirmed") {
+    where.status = BookingStatus.CONFIRMED;
   } else if (currentTab === "past") {
     where.startTime = { lt: now };
-    where.status = { not: BookingStatus.CANCELLED };
+    where.status = { notIn: [BookingStatus.CANCELLED, BookingStatus.COMPLETED, BookingStatus.NO_SHOW] };
   } else if (currentTab === "canceled") {
     where.status = BookingStatus.CANCELLED;
-  }
-
-  // Apply traditional filter overrides if specified
-  if (status !== "ALL") {
-    where.status = status;
+  } else if (currentTab === "completed") {
+    where.status = BookingStatus.COMPLETED;
+  } else if (currentTab === "no_show") {
+    where.status = BookingStatus.NO_SHOW;
   }
   
   if (q) {
@@ -149,7 +149,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
       )}
 
       <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-        <BookingFilterTabs currentTab={currentTab} q={q} status={status} />
+        <BookingFilterTabs currentTab={currentTab} q={q} />
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-400">
