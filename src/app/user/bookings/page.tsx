@@ -1,6 +1,7 @@
 import { requireTenant } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import Link from "next/link";
 import { BookingStatus } from "@prisma/client";
 import BookingFilterTabs from "./BookingFilterTabs";
@@ -131,7 +132,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                 With {nextUpcoming.customerName} &bull; {nextUpcoming.eventType.name}
               </h3>
               <p className="text-sm text-slate-400">
-                {format(nextUpcoming.startTime, "EEEE, MMMM d")} at {format(nextUpcoming.startTime, "h:mm a")} (UTC)
+                {formatInTimeZone(nextUpcoming.startTime, user.timezone, "EEEE, MMMM d")} at {formatInTimeZone(nextUpcoming.startTime, user.timezone, "h:mm a")} ({user.timezone})
               </p>
             </div>
             <div className="rounded-lg bg-slate-950/50 border border-slate-800/80 px-5 py-3 text-center sm:text-right shrink-0">
@@ -186,8 +187,8 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                     </td>
                     <td className="px-6 py-4">{booking.eventType.name}</td>
                     <td className="px-6 py-4">
-                      <div className="text-white">{format(booking.startTime, "MMM d, yyyy")}</div>
-                      <div className="text-xs">{format(booking.startTime, "h:mm a")}</div>
+                      <div className="text-white">{formatInTimeZone(booking.startTime, user.timezone, "MMM d, yyyy")}</div>
+                      <div className="text-xs">{formatInTimeZone(booking.startTime, user.timezone, "h:mm a")} ({user.timezone})</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold

@@ -2,6 +2,7 @@ import { requireTenant } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import BookingActions from "./BookingActions";
 import Link from "next/link";
 
@@ -59,11 +60,11 @@ export default async function BookingDetailsPage({ params }: { params: Promise<{
             <div className="grid grid-cols-2 gap-y-4 text-sm">
               <div>
                 <p className="text-slate-500">Date</p>
-                <p className="font-medium">{format(booking.startTime, "EEEE, MMMM d, yyyy")}</p>
+                <p className="font-medium">{formatInTimeZone(booking.startTime, user.timezone, "EEEE, MMMM d, yyyy")}</p>
               </div>
               <div>
-                <p className="text-slate-500">Time (UTC)</p>
-                <p className="font-medium">{format(booking.startTime, "h:mm a")} - {format(booking.endTime, "h:mm a")}</p>
+                <p className="text-slate-500">Time ({user.timezone})</p>
+                <p className="font-medium">{formatInTimeZone(booking.startTime, user.timezone, "h:mm a")} - {formatInTimeZone(booking.endTime, user.timezone, "h:mm a")}</p>
               </div>
               <div>
                 <p className="text-slate-500">Customer Name</p>
