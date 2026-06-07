@@ -23,14 +23,18 @@ interface ErrorLogItem {
 interface Props {
   initialLogs: ErrorLogItem[];
   retentionDays: number;
+  defaultFilter?: string;
 }
 
-export default function ErrorsPageClient({ initialLogs, retentionDays }: Props) {
+export default function ErrorsPageClient({ initialLogs, retentionDays, defaultFilter }: Props) {
   const [logs, setLogs] = useState(initialLogs);
   const [retention, setRetention] = useState(retentionDays);
+  const [filter, setFilter] = useState(defaultFilter || "ALL");
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [settingsSuccess, setSettingsSuccess] = useState(false);
+
+  const filteredLogs = logs.filter(log => filter === "ALL" || log.component === filter);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this error log entry?")) return;
@@ -124,6 +128,26 @@ export default function ErrorsPageClient({ initialLogs, retentionDays }: Props) 
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-1 self-start max-w-max">
+        {["ALL", "CLIENT", "SERVER", "API"].map((tab) => {
+          const isActive = filter === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              className={`rounded-md px-3.5 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all duration-150 cursor-pointer ${
+                isActive
+                  ? "bg-slate-800 text-white shadow-sm ring-1 ring-slate-700/50"
+                  : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-200"
+              }`}
+            >
+              {tab === "ALL" ? "All Logs" : `${tab} Logs`}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Main Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
         {logs.length === 0 ? (
@@ -135,6 +159,16 @@ export default function ErrorsPageClient({ initialLogs, retentionDays }: Props) 
             </div>
             <p className="text-sm font-semibold text-slate-300">Clean slate!</p>
             <p className="text-xs text-slate-500 mt-1">No application errors have been logged.</p>
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-800/40 text-slate-500">
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+            </div>
+            <p className="text-sm font-semibold text-slate-300">No logs found</p>
+            <p className="text-xs text-slate-500 mt-1">No logs match the "{filter}" category filter.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -159,7 +193,7 @@ export default function ErrorsPageClient({ initialLogs, retentionDays }: Props) 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
-                {logs.map((log) => {
+                {filteredLogs.map((log) => {
                   const isExpanded = expandedLogId === log.id;
                   return (
                     <tr key={log.id} className="transition-colors hover:bg-slate-800/20">

@@ -76,6 +76,25 @@ export async function GET(request: Request) {
             nextRetryAt,
           },
         });
+
+        if (!isSuccess) {
+          await prisma.errorLog.create({
+            data: {
+              message: `Webhook retry failed (Attempt ${newAttempts}) for event ${delivery.event} to URL ${endpoint.url}`,
+              path: "/api/cron/webhooks",
+              userId: endpoint.userId,
+              component: "API",
+              metadata: {
+                event: delivery.event,
+                endpointId: endpoint.id,
+                url: endpoint.url,
+                responseCode: response.status,
+                responseBody: responseBody || null,
+                attempts: newAttempts,
+              },
+            },
+          });
+        }
       } catch (error: any) {
         const newAttempts = delivery.attempts + 1;
         await prisma.webhookDelivery.update({
@@ -86,6 +105,23 @@ export async function GET(request: Request) {
             lastAttemptAt: new Date(),
             error: error?.message?.slice(0, 500) || 'Unknown error',
             nextRetryAt: new Date(Date.now() + 1000 * 60 * Math.pow(5, newAttempts)),
+          },
+        });
+
+        await prisma.errorLog.create({
+          data: {
+            message: `Webhook retry failed (Attempt ${newAttempts}) for event ${delivery.event} to URL ${endpoint.url}`,
+            stack: error?.stack || null,
+            path: "/api/cron/webhooks",
+            userId: endpoint.userId,
+            component: "API",
+            metadata: {
+              event: delivery.event,
+              endpointId: endpoint.id,
+              url: endpoint.url,
+              error: error?.message || 'Unknown error',
+              attempts: newAttempts,
+            },
           },
         });
       }

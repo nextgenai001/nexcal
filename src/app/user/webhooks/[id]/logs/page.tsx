@@ -8,11 +8,12 @@ export const metadata = {
   title: "Webhook Logs - NexCal",
 };
 
-export default async function WebhookLogsPage({ params }: { params: { id: string } }) {
+export default async function WebhookLogsPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireTenant();
+  const { id } = await params;
 
   const webhook = await prisma.webhookEndpoint.findUnique({
-    where: { id: params.id, userId: user.id },
+    where: { id, userId: user.id },
   });
 
   if (!webhook) {

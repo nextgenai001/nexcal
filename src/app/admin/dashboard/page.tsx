@@ -160,18 +160,20 @@ export default async function DashboardPage() {
           }
         />
 
-        <StatCard
-          title="Webhook Failures"
-          value={webhookFailures}
-          subtitle={webhookFailures > 0 ? "Requires attention" : "All deliveries healthy"}
-          accentClass={webhookFailures > 0 ? "bg-red-500/20 text-red-400" : "bg-slate-700 text-slate-400"}
-          alert={webhookFailures > 0}
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
-          }
-        />
+        <Link href="/admin/errors?component=API" className="block transition-all hover:scale-[1.01]">
+          <StatCard
+            title="Webhook Failures"
+            value={webhookFailures}
+            subtitle={webhookFailures > 0 ? "Requires attention" : "All deliveries healthy"}
+            accentClass={webhookFailures > 0 ? "bg-red-500/20 text-red-400" : "bg-slate-700 text-slate-400"}
+            alert={webhookFailures > 0}
+            icon={
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+            }
+          />
+        </Link>
       </div>
 
       {/* ── Quick links ──────────────────────────────────────────────────── */}

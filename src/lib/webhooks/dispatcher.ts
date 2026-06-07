@@ -82,6 +82,24 @@ export async function dispatchWebhookEvent(
             nextRetryAt,
           },
         });
+
+        if (!isSuccess) {
+          await prisma.errorLog.create({
+            data: {
+              message: `Webhook delivery failed for event ${event} to URL ${endpoint.url}`,
+              path: "/lib/webhooks/dispatcher",
+              userId,
+              component: "API",
+              metadata: {
+                event,
+                endpointId: endpoint.id,
+                url: endpoint.url,
+                responseCode: response.status,
+                responseBody: responseBody || null,
+              },
+            },
+          });
+        }
       } catch (error: any) {
         await prisma.webhookDelivery.update({
           where: { id: delivery.id },
@@ -91,6 +109,22 @@ export async function dispatchWebhookEvent(
             lastAttemptAt: new Date(),
             error: error?.message?.slice(0, 500) || 'Unknown error',
             nextRetryAt: new Date(Date.now() + 1000 * 60 * 5),
+          },
+        });
+
+        await prisma.errorLog.create({
+          data: {
+            message: `Webhook delivery failed for event ${event} to URL ${endpoint.url}`,
+            stack: error?.stack || null,
+            path: "/lib/webhooks/dispatcher",
+            userId,
+            component: "API",
+            metadata: {
+              event,
+              endpointId: endpoint.id,
+              url: endpoint.url,
+              error: error?.message || 'Unknown error',
+            },
           },
         });
       }
