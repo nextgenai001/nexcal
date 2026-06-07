@@ -64,6 +64,9 @@ export async function getAvailableSlots(
   const availableSlots: Slot[] = [];
   const nowUtc = new Date();
 
+  const eventStartStr = eventType.startDate ? eventType.startDate.toISOString().split('T')[0] : null;
+  const eventEndStr = eventType.endDate ? eventType.endDate.toISOString().split('T')[0] : null;
+
   // Iterate days in tenant timezone
   const startStr = formatInTimeZone(startDate, tenantTimezone, 'yyyy-MM-dd');
   const endStr = formatInTimeZone(endDate, tenantTimezone, 'yyyy-MM-dd');
@@ -73,6 +76,20 @@ export async function getAvailableSlots(
   const MAX_DAYS = 90; // safety limit
 
   while (currentDayStr <= endStr && daysCount < MAX_DAYS) {
+    if (eventStartStr && currentDayStr < eventStartStr) {
+      const d = new Date(`${currentDayStr}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + 1);
+      currentDayStr = d.toISOString().split('T')[0];
+      daysCount++;
+      continue;
+    }
+    if (eventEndStr && currentDayStr > eventEndStr) {
+      const d = new Date(`${currentDayStr}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + 1);
+      currentDayStr = d.toISOString().split('T')[0];
+      daysCount++;
+      continue;
+    }
     // Determine active windows for the day
     let activeWindows: { start: string; end: string }[] = [];
     

@@ -38,6 +38,13 @@ export async function createEventTypeAction(prevState: any, formData: FormData) 
     
     const customFields = customFieldsRaw ? JSON.parse(customFieldsRaw) : [];
 
+    const hasDateRange = formData.get("hasDateRange") === "true";
+    const startDateRaw = formData.get("startDate") as string;
+    const endDateRaw = formData.get("endDate") as string;
+
+    const startDate = hasDateRange && startDateRaw ? new Date(startDateRaw) : null;
+    const endDate = hasDateRange && endDateRaw ? new Date(endDateRaw) : null;
+
     // Check duplicate slug for the same user
     const existing = await prisma.eventType.findUnique({
       where: {
@@ -58,6 +65,8 @@ export async function createEventTypeAction(prevState: any, formData: FormData) 
         description,
         duration,
         customFields,
+        startDate,
+        endDate,
         userId: user.id,
       },
     });
@@ -82,6 +91,13 @@ export async function updateEventTypeAction(id: string, prevState: any, formData
     
     const customFields = customFieldsRaw ? JSON.parse(customFieldsRaw) : [];
 
+    const hasDateRange = formData.get("hasDateRange") === "true";
+    const startDateRaw = formData.get("startDate") as string;
+    const endDateRaw = formData.get("endDate") as string;
+
+    const startDate = hasDateRange && startDateRaw ? new Date(startDateRaw) : null;
+    const endDate = hasDateRange && endDateRaw ? new Date(endDateRaw) : null;
+
     // Check duplicate slug for the same user
     const existing = await prisma.eventType.findUnique({
       where: {
@@ -103,6 +119,8 @@ export async function updateEventTypeAction(id: string, prevState: any, formData
         description,
         duration,
         customFields,
+        startDate,
+        endDate,
       },
     });
 

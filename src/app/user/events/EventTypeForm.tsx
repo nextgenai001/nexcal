@@ -44,6 +44,17 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
   };
 
   const [slug, setSlug] = useState(eventType?.slug || "");
+  const [hasDateRange, setHasDateRange] = useState(!!(eventType?.startDate || eventType?.endDate));
+  const [startDate, setStartDate] = useState(() => {
+    if (!eventType?.startDate) return "";
+    const d = new Date(eventType.startDate);
+    return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    if (!eventType?.endDate) return "";
+    const d = new Date(eventType.endDate);
+    return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+  });
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const autoSlug = e.target.value
@@ -142,6 +153,56 @@ export default function EventTypeForm({ eventType }: { eventType?: any }) {
             min={1}
             className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
+        </div>
+
+        <div className="pt-4 border-t border-slate-800 space-y-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="hasDateRange"
+              name="hasDateRange"
+              value="true"
+              checked={hasDateRange}
+              onChange={(e) => setHasDateRange(e.target.checked)}
+              className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="hasDateRange" className="text-sm font-medium text-slate-300">
+              Limit date range for bookings
+            </label>
+          </div>
+
+          {hasDateRange && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 bg-slate-900/30 p-4 rounded-xl border border-slate-800/80">
+              <div>
+                <label htmlFor="startDate" className="block text-xs font-semibold text-slate-400 mb-1">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  id="startDate"
+                  name="startDate"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  required={hasDateRange}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="endDate" className="block text-xs font-semibold text-slate-400 mb-1">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  id="endDate"
+                  name="endDate"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  required={hasDateRange}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="pt-4 border-t border-slate-800 space-y-6">

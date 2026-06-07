@@ -69,21 +69,23 @@ model User {
 // Defines a bookable event (e.g., "30-min Demo", "1hr Consultation")
 // Custom booking form fields are stored as a JSON array
 model EventType {
-  id               String   @id @default(cuid())
-  slug             String   // URL: /[username]/[slug]
+  id               String    @id @default(cuid())
+  slug             String    // URL: /[username]/[slug]
   name             String
   description      String?
-  duration         Int      // minutes
-  bufferTime       Int      @default(0)    @map("buffer_time")
-  color            String?  // hex color for UI
-  isActive         Boolean  @default(true) @map("is_active")
+  duration         Int       // minutes
+  bufferTime       Int       @default(0)    @map("buffer_time")
+  color            String?   // hex color for UI
+  isActive         Boolean   @default(true) @map("is_active")
   // JSON array of field definitions:
   // [{ id: string, label: string, type: "text"|"email"|"phone"|"textarea"|"select", required: boolean, options?: string[] }]
-  customFields     Json     @default("[]") @map("custom_fields")
-  maxBookingsPerDay Int?    @map("max_bookings_per_day")
+  customFields     Json      @default("[]") @map("custom_fields")
+  maxBookingsPerDay Int?     @map("max_bookings_per_day")
+  startDate        DateTime? @map("start_date")
+  endDate          DateTime? @map("end_date")
 
-  userId           String   @map("user_id")
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String    @map("user_id")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookings         Booking[]
 
   @@unique([userId, slug])

@@ -12,6 +12,7 @@ import {
   isSameDay, 
   isToday, 
   isBefore, 
+  isAfter,
   startOfDay, 
   parseISO 
 } from 'date-fns';
@@ -36,6 +37,8 @@ interface Props {
     duration: number;
     color: string | null;
     customFields: any;
+    startDate?: string | Date | null;
+    endDate?: string | Date | null;
   };
 }
 
@@ -43,7 +46,16 @@ export default function BookingWizard({ user, eventType }: Props) {
   const router = useRouter();
   
   const [step, setStep] = useState<Step>('date_time');
-  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    if (eventType.startDate) {
+      const startD = new Date(eventType.startDate);
+      if (startD > now) {
+        return startOfMonth(startD);
+      }
+    }
+    return startOfMonth(now);
+  });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlotUtc, setSelectedSlotUtc] = useState<string | null>(null);
   
@@ -136,12 +148,31 @@ export default function BookingWizard({ user, eventType }: Props) {
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const availableSlotsForSelectedDate = selectedDateStr ? (slotsByDate.get(selectedDateStr) || []) : [];
 
-  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const handlePrevMonth = () => {
+  const canGoPrev = useMemo(() => {
     const prev = subMonths(currentMonth, 1);
-    if (!isBefore(endOfMonth(prev), startOfDay(new Date()))) {
-      setCurrentMonth(prev);
+    if (isBefore(endOfMonth(prev), startOfDay(new Date()))) return false;
+    if (eventType.startDate) {
+      const startLimit = startOfMonth(new Date(eventType.startDate));
+      if (prev < startLimit) return false;
     }
+    return true;
+  }, [currentMonth, eventType.startDate]);
+
+  const canGoNext = useMemo(() => {
+    const next = addMonths(currentMonth, 1);
+    if (eventType.endDate) {
+      const endLimit = endOfMonth(new Date(eventType.endDate));
+      if (next > endLimit) return false;
+    }
+    return true;
+  }, [currentMonth, eventType.endDate]);
+
+  const handleNextMonth = () => {
+    if (canGoNext) setCurrentMonth(addMonths(currentMonth, 1));
+  };
+
+  const handlePrevMonth = () => {
+    if (canGoPrev) setCurrentMonth(subMonths(currentMonth, 1));
   };
 
   const handleSlotSelect = (startTimeUtc: string) => {
@@ -193,16 +224,16 @@ export default function BookingWizard({ user, eventType }: Props) {
         </div>
         
         <div className="flex items-center text-slate-600 mb-4 font-medium">
-          <svg className="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg className="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           {eventType.duration} min
         </div>
 
         {step === 'details' && selectedSlotUtc && (
           <div className="flex items-start text-slate-600 mb-4 font-medium">
-            <svg className="w-5 h-5 mr-3 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg className="w-5 h-5 mr-3 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <div>
               <div className="text-blue-600">
@@ -231,14 +262,26 @@ export default function BookingWizard({ user, eventType }: Props) {
               <h2 className="text-lg font-bold text-slate-800 mb-6">Select a Date & Time</h2>
               
               <div className="flex items-center justify-between mb-4">
-                <button onClick={handlePrevMonth} className="p-2 hover:bg-slate-100 rounded-full text-slate-600 transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                <button
+                  onClick={handlePrevMonth}
+                  disabled={!canGoPrev}
+                  className={`p-2 rounded-full transition-colors ${
+                    !canGoPrev ? 'text-slate-200 cursor-not-allowed' : 'hover:bg-slate-100 text-slate-600 cursor-pointer'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <div className="font-semibold text-slate-800">
                   {format(currentMonth, 'MMMM yyyy')}
                 </div>
-                <button onClick={handleNextMonth} className="p-2 hover:bg-slate-100 rounded-full text-slate-600 transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <button
+                  onClick={handleNextMonth}
+                  disabled={!canGoNext}
+                  className={`p-2 rounded-full transition-colors ${
+                    !canGoNext ? 'text-slate-200 cursor-not-allowed' : 'hover:bg-slate-100 text-slate-600 cursor-pointer'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
 
@@ -254,17 +297,29 @@ export default function BookingWizard({ user, eventType }: Props) {
                   const isPast = isBefore(endOfDay(day), new Date());
                   const isSelected = selectedDate && isSameDay(day, selectedDate);
                   
+                  let isOutsideRange = false;
+                  if (eventType.startDate) {
+                    const startD = startOfDay(new Date(eventType.startDate));
+                    if (isBefore(startOfDay(day), startD)) isOutsideRange = true;
+                  }
+                  if (eventType.endDate) {
+                    const endD = startOfDay(new Date(eventType.endDate));
+                    if (isAfter(startOfDay(day), endD)) isOutsideRange = true;
+                  }
+
+                  const isDisabled = isPast || !hasSlots || isOutsideRange;
+                  
                   const btnClass = `
                     aspect-square rounded-full flex items-center justify-center text-sm font-medium transition-all
-                    ${isPast || !hasSlots ? 'text-slate-300 cursor-default' : 'cursor-pointer hover:bg-blue-50'}
+                    ${isDisabled ? 'text-slate-300 cursor-default' : 'cursor-pointer hover:bg-blue-50'}
                     ${isSelected ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : ''}
-                    ${!isSelected && hasSlots ? 'text-blue-600 bg-blue-50/50' : ''}
+                    ${!isSelected && !isDisabled ? 'text-blue-600 bg-blue-50/50' : ''}
                   `;
 
                   return (
                     <button
                       key={day.toISOString()}
-                      disabled={isPast || !hasSlots}
+                      disabled={isDisabled}
                       onClick={() => { setSelectedDate(day); setSelectedSlotUtc(null); }}
                       className={btnClass}
                     >
