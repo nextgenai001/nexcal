@@ -180,7 +180,7 @@ export default function TimezoneCombobox({
 
       {/* Dropdown Overlay */}
       {isOpen && (
-        <div className="absolute z-50 mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-100">
+        <div className="absolute z-50 bottom-full mb-1.5 w-full rounded-xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-100">
           {/* Search Box */}
           <div className="flex items-center border-b border-slate-800 bg-slate-900/50 px-3 py-2">
             <svg className="mr-2 h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
