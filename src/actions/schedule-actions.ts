@@ -150,6 +150,28 @@ export async function deleteAvailabilityScheduleAction(scheduleId: string) {
   }
 }
 
+export async function setDefaultAvailabilityScheduleAction(scheduleId: string) {
+  try {
+    const user = await requireTenant();
+
+    await prisma.$transaction([
+      prisma.availabilitySchedule.updateMany({
+        where: { userId: user.id },
+        data: { isDefault: false }
+      }),
+      prisma.availabilitySchedule.update({
+        where: { id: scheduleId, userId: user.id },
+        data: { isDefault: true }
+      })
+    ]);
+
+    revalidatePath("/user/schedule");
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function addDateOverrideAction(prevState: any, formData: FormData) {
   try {
     const user = await requireTenant();
