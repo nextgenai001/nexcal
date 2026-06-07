@@ -297,9 +297,10 @@ export default function BookingWizard({ user, eventType }: Props) {
           )}
 
           {eventType.description && (
-            <div className={`mt-4 pt-4 border-t text-sm leading-relaxed ${isDark ? "border-slate-800 text-slate-400" : "border-slate-200 text-slate-600"}`}>
-              {eventType.description}
-            </div>
+            <div 
+              className={`mt-4 pt-4 border-t text-sm leading-relaxed whitespace-pre-wrap ${isDark ? "border-slate-800 text-slate-400" : "border-slate-200 text-slate-600"}`}
+              dangerouslySetInnerHTML={{ __html: eventType.description }}
+            />
           )}
         </div>
       )}

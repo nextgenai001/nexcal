@@ -17,6 +17,7 @@ export default async function EditEventTypePage({ params }: { params: Promise<{ 
     }),
     prisma.availabilitySchedule.findMany({
       where: { userId: user.id },
+      include: { schedules: true },
       orderBy: { createdAt: "asc" }
     })
   ]);

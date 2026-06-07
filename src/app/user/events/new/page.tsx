@@ -11,6 +11,7 @@ export default async function NewEventTypePage() {
 
   const availabilitySchedules = await prisma.availabilitySchedule.findMany({
     where: { userId: user.id },
+    include: { schedules: true },
     orderBy: { createdAt: "asc" }
   });
 

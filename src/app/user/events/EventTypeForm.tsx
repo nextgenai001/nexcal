@@ -48,6 +48,33 @@ export default function EventTypeForm({
   const [borderRadius, setBorderRadius] = useState(customFieldsData?.borderRadius || "rounded");
   const [backgroundTheme, setBackgroundTheme] = useState(customFieldsData?.backgroundTheme || "light");
 
+  const [availabilityScheduleId, setAvailabilityScheduleId] = useState(
+    eventType?.availabilityScheduleId || availabilitySchedules.find(as => as.isDefault)?.id || ""
+  );
+
+  const selectedSchedule = availabilitySchedules.find(as => as.id === availabilityScheduleId);
+  const activeDays = selectedSchedule ? new Set(
+    (selectedSchedule.schedules || [])
+      .filter((s: any) => s.isActive)
+      .map((s: any) => s.dayOfWeek)
+  ) : new Set([1, 2, 3, 4, 5]);
+
+  const handleFormatText = (tagOpen: string, tagClose: string) => {
+    const textarea = document.getElementById("description") as HTMLTextAreaElement;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    const replacement = tagOpen + selected + tagClose;
+    const newValue = text.substring(0, start) + replacement + text.substring(end);
+    setDescription(newValue);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + tagOpen.length, start + tagOpen.length + selected.length);
+    }, 0);
+  };
+
   // Preview options
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [previewStep, setPreviewStep] = useState<"date_time" | "details">("details");
@@ -161,7 +188,43 @@ export default function EventTypeForm({
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-slate-300">Description</label>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="description" className="block text-sm font-medium text-slate-300">Description</label>
+              <div className="flex gap-1 bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => handleFormatText("<strong>", "</strong>")}
+                  className="px-2 py-0.5 rounded text-xs font-bold hover:bg-slate-700 text-slate-200"
+                  title="Bold"
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormatText("<em>", "</em>")}
+                  className="px-2 py-0.5 rounded text-xs italic hover:bg-slate-700 text-slate-200"
+                  title="Italic"
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormatText("<u>", "</u>")}
+                  className="px-2 py-0.5 rounded text-xs underline hover:bg-slate-700 text-slate-200"
+                  title="Underline"
+                >
+                  U
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormatText('<span style="color: #ef4444">', "</span>")}
+                  className="px-2 py-0.5 rounded text-xs font-semibold hover:bg-slate-700 text-red-500"
+                  title="Red"
+                >
+                  Red
+                </button>
+              </div>
+            </div>
             <textarea
               id="description"
               name="description"
@@ -191,7 +254,8 @@ export default function EventTypeForm({
             <select
               id="availabilityScheduleId"
               name="availabilityScheduleId"
-              defaultValue={eventType?.availabilityScheduleId || availabilitySchedules.find(as => as.isDefault)?.id || ""}
+              value={availabilityScheduleId}
+              onChange={(e) => setAvailabilityScheduleId(e.target.value)}
               required
               className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
@@ -578,9 +642,10 @@ export default function EventTypeForm({
                   )}
 
                   {description && (
-                    <p className="text-xs text-slate-400 mt-4 pt-4 border-t border-slate-800 leading-relaxed line-clamp-4">
-                      {description}
-                    </p>
+                    <div 
+                      className="text-xs text-slate-400 mt-4 pt-4 border-t border-slate-800 leading-relaxed line-clamp-4 whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: description }}
+                    />
                   )}
                 </div>
               )}
@@ -612,11 +677,12 @@ export default function EventTypeForm({
                     <div className="grid grid-cols-7 gap-1">
                       {Array.from({ length: 28 }).map((_, i) => {
                         const dayNum = i - 2;
-                        const isSelectable = dayNum > 0 && dayNum < 24;
+                        const dayOfWeek = (i + 1) % 7;
+                        const isSelectable = dayNum > 0 && dayNum < 24 && activeDays.has(dayOfWeek);
                         const isSelected = dayNum === 9;
                         
                         const dayStyle: React.CSSProperties = {
-                          borderRadius: previewIsSquare ? "0px" : "999px"
+                           borderRadius: previewIsSquare ? "0px" : "999px"
                         };
                         if (isSelectable) {
                           if (isSelected) {
@@ -685,6 +751,58 @@ export default function EventTypeForm({
                         } ${previewIsSquare ? "rounded-none" : "rounded-lg"}`}>john@example.com</div>
                       </div>
                     )}
+
+                    {defaultFields.phone?.enabled && (
+                      <div className="space-y-1">
+                        <div className="text-xs font-semibold text-slate-400">{defaultFields.phone.label} {defaultFields.phone.required ? "*" : ""}</div>
+                        <div className={`h-9 border w-full flex items-center px-3 text-xs text-slate-400 bg-slate-800/20 ${
+                          previewIsDark ? "border-slate-700 bg-slate-800/50" : "border-slate-300 bg-white"
+                        } ${previewIsSquare ? "rounded-none" : "rounded-lg"}`}>+1 (555) 019-2834</div>
+                      </div>
+                    )}
+
+                    {defaultFields.guests?.enabled && (
+                      <div className="space-y-1">
+                        <div className="text-xs font-semibold text-slate-400">{defaultFields.guests.label} {defaultFields.guests.required ? "*" : ""}</div>
+                        <div className={`h-9 border w-full flex items-center px-3 text-xs text-slate-400 bg-slate-800/20 ${
+                          previewIsDark ? "border-slate-700 bg-slate-800/50" : "border-slate-300 bg-white"
+                        } ${previewIsSquare ? "rounded-none" : "rounded-lg"}`}>guest@example.com</div>
+                      </div>
+                    )}
+
+                    {defaultFields.meeting_about?.enabled && (
+                      <div className="space-y-1">
+                        <div className="text-xs font-semibold text-slate-400">{defaultFields.meeting_about.label} {defaultFields.meeting_about.required ? "*" : ""}</div>
+                        <div className={`h-9 border w-full flex items-center px-3 text-xs text-slate-400 bg-slate-800/20 ${
+                          previewIsDark ? "border-slate-700 bg-slate-800/50" : "border-slate-300 bg-white"
+                        } ${previewIsSquare ? "rounded-none" : "rounded-lg"}`}>Project kickoff and review</div>
+                      </div>
+                    )}
+
+                    {defaultFields.notes?.enabled && (
+                      <div className="space-y-1">
+                        <div className="text-xs font-semibold text-slate-400">{defaultFields.notes.label} {defaultFields.notes.required ? "*" : ""}</div>
+                        <div className={`h-16 border w-full flex items-start p-3 text-xs text-slate-400 bg-slate-800/20 ${
+                          previewIsDark ? "border-slate-700 bg-slate-800/50" : "border-slate-300 bg-white"
+                        } ${previewIsSquare ? "rounded-none" : "rounded-lg"}`}>Here are some additional notes...</div>
+                      </div>
+                    )}
+
+                    {/* Custom fields configured by the user */}
+                    {fields.map((field) => (
+                      <div key={field.id} className="space-y-1">
+                        <div className="text-xs font-semibold text-slate-400">{field.label || "Custom Field"} {field.required ? "*" : ""}</div>
+                        {field.type === "textarea" ? (
+                          <div className={`h-16 border w-full flex items-start p-3 text-xs text-slate-400 bg-slate-800/20 ${
+                            previewIsDark ? "border-slate-700 bg-slate-800/50" : "border-slate-300 bg-white"
+                          } ${previewIsSquare ? "rounded-none" : "rounded-lg"}`}>Sample long-form answer...</div>
+                        ) : (
+                          <div className={`h-9 border w-full flex items-center px-3 text-xs text-slate-400 bg-slate-800/20 ${
+                            previewIsDark ? "border-slate-700 bg-slate-800/50" : "border-slate-300 bg-white"
+                          } ${previewIsSquare ? "rounded-none" : "rounded-lg"}`}>Sample answer ({field.type})</div>
+                        )}
+                      </div>
+                    ))}
 
                     {/* Submit Button Preview */}
                     <div className="pt-4">
