@@ -26,15 +26,13 @@ export default async function EditEventTypePage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-none w-full px-2 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Edit Event Type</h1>
         <p className="text-sm text-slate-400">Update your bookable event</p>
       </div>
       
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <EventTypeForm eventType={eventType} availabilitySchedules={availabilitySchedules} />
-      </div>
+      <EventTypeForm eventType={eventType} availabilitySchedules={availabilitySchedules} />
     </div>
   );
 }

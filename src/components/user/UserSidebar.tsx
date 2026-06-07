@@ -82,6 +82,7 @@ export default function UserSidebar({ username }: UserSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const bookingLink = `${appUrl}/${username}`;
@@ -99,103 +100,155 @@ export default function UserSidebar({ username }: UserSidebarProps) {
     }
   };
 
-  const SidebarContent = () => (
-    <div className="flex h-full flex-col">
-      {/* Logo */}
-      <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
-          <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-sm font-bold text-white leading-none">NexCal</p>
-          <span className="mt-1 inline-block rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400">
-            Tenant
-          </span>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-          Manage
-        </p>
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                active
-                  ? "bg-indigo-600/20 text-indigo-400 shadow-sm ring-1 ring-indigo-500/30"
-                  : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
-              }`}
-            >
-              <span className={active ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}>
-                {item.icon}
-              </span>
-              {item.label}
-              {active && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Public booking link */}
-      <div className="border-t border-slate-800 px-4 py-4">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-          Your Booking Page
-        </p>
-        <div className="flex items-center gap-2 rounded-lg bg-slate-800/60 px-3 py-2">
-          <span className="flex-1 truncate text-xs text-slate-400">
-            /{username}
-          </span>
-          <button
-            onClick={handleCopyLink}
-            title="Copy booking link"
-            className="shrink-0 rounded p-1 text-slate-500 transition-colors hover:bg-slate-700 hover:text-slate-200"
-          >
-            {copied ? (
-              <svg className="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+  const renderSidebarContent = (isMobile: boolean) => {
+    const collapsed = !isMobile && isCollapsed;
+    return (
+      <div className="flex h-full flex-col">
+        {/* Logo */}
+        <div className={`flex items-center justify-between border-b border-slate-800 py-5 ${collapsed ? "px-3" : "px-5"}`}>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
               </svg>
-            ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-              </svg>
+            </div>
+            {!collapsed && (
+              <div>
+                <p className="text-sm font-bold text-white leading-none">NexCal</p>
+                <span className="mt-1 inline-block rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400">
+                  Tenant
+                </span>
+              </div>
             )}
-          </button>
-          <a
-            href={bookingLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Open booking page"
-            className="shrink-0 rounded p-1 text-slate-500 transition-colors hover:bg-slate-700 hover:text-slate-200"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-            </svg>
-          </a>
+          </div>
+          
+          {/* Toggle Button for Desktop */}
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-800 hover:text-white transition-colors"
+            >
+              {isCollapsed ? (
+                <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5M4.5 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-7.5 15l-7.5-7.5 7.5-7.5" />
+                </svg>
+              )}
+            </button>
+          )}
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="border-t border-slate-800 px-5 py-3">
-        <p className="text-[10px] text-slate-600">NexCal v3.0</p>
+        {/* Nav */}
+        <nav className={`flex-1 space-y-1 py-4 ${collapsed ? "px-2" : "px-3"}`}>
+          {!collapsed && (
+            <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Manage
+            </p>
+          )}
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={`group flex items-center rounded-xl py-2.5 text-sm font-medium transition-all duration-150 ${
+                  collapsed ? "justify-center px-0 w-10 mx-auto" : "gap-3 px-3"
+                } ${
+                  active
+                    ? "bg-indigo-600/20 text-indigo-400 shadow-sm ring-1 ring-indigo-500/30"
+                    : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
+                }`}
+              >
+                <span className={active ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}>
+                  {item.icon}
+                </span>
+                {!collapsed && item.label}
+                {!collapsed && active && (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Public booking link */}
+        <div className={`border-t border-slate-800 py-4 ${collapsed ? "px-2 flex flex-col items-center" : "px-4"}`}>
+          {!collapsed ? (
+            <>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                Your Booking Page
+              </p>
+              <div className="flex items-center gap-2 rounded-lg bg-slate-800/60 px-3 py-2">
+                <span className="flex-1 truncate text-xs text-slate-400">
+                  /{username}
+                </span>
+                <button
+                  onClick={handleCopyLink}
+                  title="Copy booking link"
+                  className="shrink-0 rounded p-1 text-slate-500 transition-colors hover:bg-slate-700 hover:text-slate-200"
+                >
+                  {copied ? (
+                    <svg className="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                    </svg>
+                  )}
+                </button>
+                <a
+                  href={bookingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open booking page"
+                  className="shrink-0 rounded p-1 text-slate-500 transition-colors hover:bg-slate-700 hover:text-slate-200"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                  </svg>
+                </a>
+              </div>
+            </>
+          ) : (
+            <button
+              onClick={handleCopyLink}
+              title={copied ? "Copied!" : "Copy booking link"}
+              className={`rounded-xl p-2.5 transition-colors ${copied ? "bg-green-500/20 text-green-400" : "text-slate-500 hover:bg-slate-800 hover:text-slate-200"}`}
+            >
+              {copied ? (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!collapsed && (
+          <div className="border-t border-slate-800 px-5 py-3">
+            <p className="text-[10px] text-slate-600">NexCal v3.0</p>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden w-60 shrink-0 border-r border-slate-800 bg-slate-900 lg:flex lg:flex-col">
-        <SidebarContent />
+      <aside className={`hidden shrink-0 border-r border-slate-800 bg-slate-900 lg:flex lg:flex-col transition-all duration-300 ${isCollapsed ? "w-16" : "w-60"}`}>
+        {renderSidebarContent(false)}
       </aside>
 
       {/* Mobile: Hamburger button */}
@@ -234,7 +287,7 @@ export default function UserSidebar({ username }: UserSidebarProps) {
             </svg>
           </button>
         </div>
-        <SidebarContent />
+        {renderSidebarContent(true)}
       </aside>
     </>
   );

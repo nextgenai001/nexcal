@@ -210,86 +210,152 @@ export default function BookingWizard({ user, eventType }: Props) {
 
   const displayName = user.businessName || user.name || user.username;
 
+  // Collapse sidebar state for the booking wizard
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Read customization options from eventType.customFields
+  const customConfig = useMemo(() => {
+    const config = eventType.customFields;
+    if (config && typeof config === "object" && !Array.isArray(config)) {
+      return config as Record<string, any>;
+    }
+    return {};
+  }, [eventType.customFields]);
+
+  const themeColor = customConfig.themeColor || "#2563eb";
+  const isDark = customConfig.backgroundTheme === "dark";
+  const isSquare = customConfig.borderRadius === "square";
+  const bookingButtonText = customConfig.bookingButtonText || "Schedule Event";
+
+  const containerClass = `${
+    isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"
+  } ${isSquare ? "rounded-none" : "rounded-2xl"} shadow-sm border overflow-hidden flex flex-col md:flex-row min-h-[600px]`;
+
+  const sidebarClass = `w-full md:w-1/3 border-r p-8 flex flex-col shrink-0 ${
+    isDark ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"
+  }`;
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+    <div className={containerClass}>
       
       {/* LEFT SIDE: Event Details */}
-      <div className="w-full md:w-1/3 bg-slate-50 border-r border-slate-200 p-8 flex flex-col">
-        <div className="mb-8">
-          {user.businessLogo ? (
-            <img src={user.businessLogo} alt={displayName} className="w-16 h-16 rounded-full shadow-sm mb-4 object-cover" />
-          ) : (
-            <div className="w-16 h-16 rounded-full mb-4 bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-bold shadow-sm">
-              {displayName.charAt(0).toUpperCase()}
+      {!sidebarCollapsed && (
+        <div className={sidebarClass}>
+          <div className="flex items-center justify-between mb-8">
+            {user.businessLogo ? (
+              <img src={user.businessLogo} alt={displayName} className="w-16 h-16 rounded-full shadow-sm object-cover" />
+            ) : (
+              <div 
+                style={{ backgroundColor: themeColor + "15", color: themeColor }}
+                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-sm"
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(true)}
+              className="p-1.5 rounded-lg hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 transition-colors hidden md:block"
+              title="Collapse event details"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </button>
+          </div>
+          <p className={`text-sm font-medium mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{displayName}</p>
+          <h1 className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-800"}`}>{eventType.name}</h1>
+          
+          <div className="flex items-center mt-6 mb-4 font-medium">
+            <svg className="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {eventType.duration} min
+          </div>
+
+          {step === 'details' && selectedSlotUtc && (
+            <div className="flex items-start mb-4 font-medium">
+              <svg 
+                style={{ color: themeColor }}
+                className="w-5 h-5 mr-3 shrink-0" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                strokeWidth={2} 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <div style={{ color: themeColor }}>
+                  {formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, 'EEEE, ') + formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, user.dateFormat ?? 'MM/dd/yyyy')}
+                </div>
+                <div className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  {formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, 'h:mm a')} ({viewerTimezone})
+                </div>
+              </div>
             </div>
           )}
-          <p className="text-sm font-medium text-slate-500 mb-1">{displayName}</p>
-          <h1 className="text-2xl font-bold text-slate-800">{eventType.name}</h1>
-        </div>
-        
-        <div className="flex items-center text-slate-600 mb-4 font-medium">
-          <svg className="w-5 h-5 mr-3 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {eventType.duration} min
-        </div>
 
-        {step === 'details' && selectedSlotUtc && (
-          <div className="flex items-start text-slate-600 mb-4 font-medium">
-            <svg className="w-5 h-5 mr-3 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <div>
-              <div className="text-blue-600">
-                {formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, 'EEEE, ') + formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, user.dateFormat ?? 'MM/dd/yyyy')}
-              </div>
-              <div className="text-slate-500 text-sm mt-1">
-                {formatInTimeZone(parseISO(selectedSlotUtc), viewerTimezone, 'h:mm a')} (Local Time)
-              </div>
+          {eventType.description && (
+            <div className={`mt-4 pt-4 border-t text-sm leading-relaxed ${isDark ? "border-slate-800 text-slate-400" : "border-slate-200 text-slate-600"}`}>
+              {eventType.description}
             </div>
-          </div>
-        )}
-
-        {eventType.description && (
-          <div className="mt-4 pt-4 border-t border-slate-200 text-slate-600 text-sm leading-relaxed">
-            {eventType.description}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* RIGHT SIDE: Interactive Section */}
-      <div className="w-full md:w-2/3 p-8">
+      <div className="flex-1 p-8">
         {step === 'date_time' ? (
           <div className="flex flex-col md:flex-row gap-8 h-full">
             {/* Calendar */}
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-slate-800 mb-6">Select a Date & Time</h2>
+              <div className="flex items-center gap-2 mb-6">
+                {sidebarCollapsed && (
+                  <button
+                    type="button"
+                    onClick={() => setSidebarCollapsed(false)}
+                    style={{ color: themeColor }}
+                    className="p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors hidden md:block"
+                    title="Expand event details"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </button>
+                )}
+                <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-800"}`}>Select a Date & Time</h2>
+              </div>
               
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={handlePrevMonth}
                   disabled={!canGoPrev}
                   className={`p-2 rounded-full transition-colors ${
-                    !canGoPrev ? 'text-slate-200 cursor-not-allowed' : 'hover:bg-slate-100 text-slate-600 cursor-pointer'
+                    !canGoPrev 
+                      ? (isDark ? 'text-slate-800 cursor-not-allowed' : 'text-slate-200 cursor-not-allowed') 
+                      : (isDark ? 'hover:bg-slate-800 text-slate-300 cursor-pointer' : 'hover:bg-slate-100 text-slate-600 cursor-pointer')
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <div className="font-semibold text-slate-800">
+                <div className={`font-semibold ${isDark ? "text-white" : "text-slate-800"}`}>
                   {format(currentMonth, 'MMMM yyyy')}
                 </div>
                 <button
                   onClick={handleNextMonth}
                   disabled={!canGoNext}
                   className={`p-2 rounded-full transition-colors ${
-                    !canGoNext ? 'text-slate-200 cursor-not-allowed' : 'hover:bg-slate-100 text-slate-600 cursor-pointer'
+                    !canGoNext 
+                      ? (isDark ? 'text-slate-800 cursor-not-allowed' : 'text-slate-200 cursor-not-allowed') 
+                      : (isDark ? 'hover:bg-slate-800 text-slate-300 cursor-pointer' : 'hover:bg-slate-100 text-slate-600 cursor-pointer')
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
 
-              <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <div className={`grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>
                 {Array.from({ length: 7 }).map((_, i) => {
                   const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
                   const dayName = dayNames[((user.weekStart ?? 1) + i) % 7];
@@ -318,11 +384,28 @@ export default function BookingWizard({ user, eventType }: Props) {
                   const isDisabled = isPast || !hasSlots || isOutsideRange;
                   
                   const btnClass = `
-                    aspect-square rounded-full flex items-center justify-center text-sm font-medium transition-all
-                    ${isDisabled ? 'text-slate-300 cursor-default' : 'cursor-pointer hover:bg-blue-50'}
-                    ${isSelected ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : ''}
-                    ${!isSelected && !isDisabled ? 'text-blue-600 bg-blue-50/50' : ''}
+                    aspect-square flex items-center justify-center text-sm font-medium transition-all
+                    ${isDisabled 
+                      ? (isDark ? 'text-slate-700 cursor-default' : 'text-slate-300 cursor-default') 
+                      : 'cursor-pointer'
+                    }
                   `;
+
+                  const btnStyle: React.CSSProperties = {};
+                  if (!isDisabled) {
+                    if (isSelected) {
+                      btnStyle.backgroundColor = themeColor;
+                      btnStyle.color = '#fff';
+                    } else {
+                      btnStyle.color = themeColor;
+                      btnStyle.backgroundColor = themeColor + '15';
+                    }
+                  }
+                  if (!isSquare) {
+                    btnStyle.borderRadius = '9999px';
+                  } else {
+                    btnStyle.borderRadius = '0px';
+                  }
 
                   return (
                     <button
@@ -330,6 +413,7 @@ export default function BookingWizard({ user, eventType }: Props) {
                       disabled={isDisabled}
                       onClick={() => { setSelectedDate(day); setSelectedSlotUtc(null); }}
                       className={btnClass}
+                      style={btnStyle}
                     >
                       {format(day, 'd')}
                     </button>
@@ -337,7 +421,7 @@ export default function BookingWizard({ user, eventType }: Props) {
                 })}
               </div>
               
-              <div className="mt-8 border-t border-slate-100 pt-6">
+              <div className={`mt-8 border-t pt-6 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
                 <label className="block text-xs font-semibold text-slate-500 mb-2 flex items-center justify-center gap-1.5 uppercase tracking-wider">
                   <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   Viewing Timezone
@@ -354,7 +438,7 @@ export default function BookingWizard({ user, eventType }: Props) {
             {/* Time Slots */}
             {selectedDate && (
               <div className="w-full md:w-48 flex flex-col h-[400px]">
-                <h3 className="font-semibold text-slate-800 mb-4 text-center md:text-left">
+                <h3 className={`font-semibold mb-4 text-center md:text-left ${isDark ? "text-white" : "text-slate-800"}`}>
                   {format(selectedDate, 'EEEE, ') + format(selectedDate, user.dateFormat ?? 'MM/dd/yyyy')}
                 </h3>
                 <div className="flex-1 overflow-y-auto pr-2 space-y-2 pb-4 scrollbar-thin">
@@ -365,22 +449,36 @@ export default function BookingWizard({ user, eventType }: Props) {
                       const isSelected = selectedSlotUtc === slot.startTimeUtc;
                       const timeLabel = formatInTimeZone(parseISO(slot.startTimeUtc), viewerTimezone, 'h:mm a');
                       
+                      const btnStyle: React.CSSProperties = {
+                        borderRadius: isSquare ? "0px" : "8px"
+                      };
+                      if (isSelected) {
+                        btnStyle.backgroundColor = themeColor;
+                        btnStyle.borderColor = themeColor;
+                        btnStyle.color = "#fff";
+                      } else {
+                        btnStyle.borderColor = themeColor + "44";
+                        btnStyle.color = themeColor;
+                        btnStyle.backgroundColor = isDark ? "transparent" : "#fff";
+                      }
+
                       return (
                         <div key={slot.startTimeUtc} className="flex gap-2">
                           <button
                             onClick={() => handleSlotSelect(slot.startTimeUtc)}
-                            className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium border transition-all ${
-                              isSelected 
-                                ? 'border-slate-800 bg-slate-800 text-white' 
-                                : 'border-blue-200 text-blue-700 bg-white hover:border-blue-600 hover:text-blue-800'
-                            }`}
+                            style={btnStyle}
+                            className="flex-1 py-3 px-4 text-sm font-medium border transition-all"
                           >
                             {timeLabel}
                           </button>
                           {isSelected && (
                             <button
                               onClick={handleContinue}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg text-sm font-medium shadow-sm transition-colors"
+                              style={{ 
+                                backgroundColor: themeColor,
+                                borderRadius: isSquare ? "0px" : "8px"
+                              }}
+                              className="hover:opacity-90 text-white px-4 rounded-lg text-sm font-medium shadow-sm transition-colors"
                             >
                               Next
                             </button>
@@ -397,15 +495,32 @@ export default function BookingWizard({ user, eventType }: Props) {
           </div>
         ) : (
           <div className="h-full flex flex-col">
-            <button 
-              onClick={() => setStep('date_time')}
-              className="text-blue-600 text-sm font-medium hover:underline mb-6 self-start flex items-center"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-              Back
-            </button>
+            <div className="flex items-center justify-between mb-6">
+              <button 
+                onClick={() => setStep('date_time')}
+                style={{ color: themeColor }}
+                className="text-sm font-medium hover:underline flex items-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                Back
+              </button>
+              
+              {sidebarCollapsed && (
+                <button
+                  type="button"
+                  onClick={() => setSidebarCollapsed(false)}
+                  style={{ color: themeColor }}
+                  className="p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors hidden md:block"
+                  title="Expand event details"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              )}
+            </div>
             
-            <h2 className="text-2xl font-bold text-slate-800 mb-6">Enter Details</h2>
+            <h2 className={`text-2xl font-bold mb-6 ${isDark ? "text-white" : "text-slate-800"}`}>Enter Details</h2>
             
             {error && (
               <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm">
@@ -417,13 +532,18 @@ export default function BookingWizard({ user, eventType }: Props) {
               {/* Dynamic Default Fields */}
               {parsedFormConfig.defaultFields.name.enabled && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                     {parsedFormConfig.defaultFields.name.label} {parsedFormConfig.defaultFields.name.required ? '*' : ''}
                   </label>
                   <input 
                     type="text" 
                     required={parsedFormConfig.defaultFields.name.required}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                    style={{ borderRadius: isSquare ? '0px' : '8px' }}
                     value={formData.name || ''}
                     onChange={e => handleInputChange('name', e.target.value)}
                   />
@@ -432,13 +552,18 @@ export default function BookingWizard({ user, eventType }: Props) {
               
               {parsedFormConfig.defaultFields.email.enabled && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                     {parsedFormConfig.defaultFields.email.label} {parsedFormConfig.defaultFields.email.required ? '*' : ''}
                   </label>
                   <input 
                     type="email" 
                     required={parsedFormConfig.defaultFields.email.required}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                    style={{ borderRadius: isSquare ? '0px' : '8px' }}
                     value={formData.email || ''}
                     onChange={e => handleInputChange('email', e.target.value)}
                   />
@@ -447,13 +572,18 @@ export default function BookingWizard({ user, eventType }: Props) {
 
               {parsedFormConfig.defaultFields.phone.enabled && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                     {parsedFormConfig.defaultFields.phone.label} {parsedFormConfig.defaultFields.phone.required ? '*' : ''}
                   </label>
                   <input 
                     type="tel" 
                     required={parsedFormConfig.defaultFields.phone.required}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                    style={{ borderRadius: isSquare ? '0px' : '8px' }}
                     value={formData.phone || ''}
                     onChange={e => handleInputChange('phone', e.target.value)}
                   />
@@ -462,14 +592,19 @@ export default function BookingWizard({ user, eventType }: Props) {
 
               {parsedFormConfig.defaultFields.guests.enabled && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                     {parsedFormConfig.defaultFields.guests.label} {parsedFormConfig.defaultFields.guests.required ? '*' : ''}
                   </label>
                   <input 
                     type="text" 
                     required={parsedFormConfig.defaultFields.guests.required}
                     placeholder="e.g. guest1@example.com, guest2@example.com"
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                    style={{ borderRadius: isSquare ? '0px' : '8px' }}
                     value={formData.guests || ''}
                     onChange={e => handleInputChange('guests', e.target.value)}
                   />
@@ -478,13 +613,18 @@ export default function BookingWizard({ user, eventType }: Props) {
 
               {parsedFormConfig.defaultFields.meeting_about.enabled && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                     {parsedFormConfig.defaultFields.meeting_about.label} {parsedFormConfig.defaultFields.meeting_about.required ? '*' : ''}
                   </label>
                   <input 
                     type="text" 
                     required={parsedFormConfig.defaultFields.meeting_about.required}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                    style={{ borderRadius: isSquare ? '0px' : '8px' }}
                     value={formData.meeting_about || ''}
                     onChange={e => handleInputChange('meeting_about', e.target.value)}
                   />
@@ -493,13 +633,18 @@ export default function BookingWizard({ user, eventType }: Props) {
 
               {parsedFormConfig.defaultFields.notes.enabled && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                     {parsedFormConfig.defaultFields.notes.label} {parsedFormConfig.defaultFields.notes.required ? '*' : ''}
                   </label>
                   <textarea 
                     required={parsedFormConfig.defaultFields.notes.required}
                     rows={3}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                    style={{ borderRadius: isSquare ? '0px' : '8px' }}
                     value={formData.notes || ''}
                     onChange={e => handleInputChange('notes', e.target.value)}
                   />
@@ -509,7 +654,7 @@ export default function BookingWizard({ user, eventType }: Props) {
               {/* Dynamic Custom Fields */}
               {parsedFormConfig.customFields.map((field: any) => (
                 <div key={field.id}>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className={`block text-sm font-medium mb-1 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                     {field.label} {field.required ? '*' : ''}
                   </label>
                   
@@ -517,14 +662,24 @@ export default function BookingWizard({ user, eventType }: Props) {
                     <textarea 
                       required={field.required}
                       rows={3}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                        isDark 
+                          ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                          : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                      }`}
+                      style={{ borderRadius: isSquare ? '0px' : '8px' }}
                       value={formData[field.id] || ''}
                       onChange={e => handleInputChange(field.id, e.target.value)}
                     />
                   ) : field.type === 'select' ? (
                     <select
                       required={field.required}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+                      className={`w-full px-4 py-2 border rounded-lg outline-none transition-all bg-white ${
+                        isDark 
+                          ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                          : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                      }`}
+                      style={{ borderRadius: isSquare ? '0px' : '8px' }}
                       value={formData[field.id] || ''}
                       onChange={e => handleInputChange(field.id, e.target.value)}
                     >
@@ -537,7 +692,12 @@ export default function BookingWizard({ user, eventType }: Props) {
                     <input 
                       type={field.type || 'text'}
                       required={field.required}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      className={`w-full px-4 py-2 border rounded-lg outline-none transition-all ${
+                        isDark 
+                          ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' 
+                          : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                      }`}
+                      style={{ borderRadius: isSquare ? '0px' : '8px' }}
                       value={formData[field.id] || ''}
                       onChange={e => handleInputChange(field.id, e.target.value)}
                     />
@@ -549,7 +709,11 @@ export default function BookingWizard({ user, eventType }: Props) {
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-sm disabled:opacity-70 flex justify-center items-center"
+                  style={{ 
+                    backgroundColor: themeColor,
+                    borderRadius: isSquare ? "0px" : "8px"
+                  }}
+                  className="w-full text-white font-semibold py-3 px-6 transition-colors shadow-sm disabled:opacity-70 flex justify-center items-center hover:opacity-90"
                 >
                   {submitting ? (
                     <>
@@ -559,7 +723,7 @@ export default function BookingWizard({ user, eventType }: Props) {
                       </svg>
                       Confirming...
                     </>
-                  ) : 'Schedule Event'}
+                  ) : bookingButtonText}
                 </button>
               </div>
             </form>
@@ -577,3 +741,4 @@ function endOfDay(date: Date) {
   d.setHours(23, 59, 59, 999);
   return d;
 }
+

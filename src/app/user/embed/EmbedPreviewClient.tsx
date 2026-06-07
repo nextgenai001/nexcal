@@ -24,7 +24,15 @@ export default function EmbedPreviewClient({ username, eventTypes }: EmbedPrevie
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  // Calculate target URL
+  // Calculate target URL for preview (WITHOUT ?embed=true)
+  const previewUrl = useMemo(() => {
+    if (selectedType === "profile") {
+      return `${appUrl}/${username}`;
+    }
+    return `${appUrl}/${username}/${selectedType}`;
+  }, [appUrl, username, selectedType]);
+
+  // Calculate target URL for final embed code (WITH ?embed=true)
   const embedUrl = useMemo(() => {
     if (selectedType === "profile") {
       return `${appUrl}/${username}?embed=true`;
@@ -167,7 +175,7 @@ export default function EmbedPreviewClient({ username, eventTypes }: EmbedPrevie
               <span className="h-3 w-3 rounded-full bg-green-500/80" />
             </div>
             <div className="ml-4 flex-1 max-w-lg rounded bg-slate-950 px-3 py-1 text-center text-xs text-slate-500 truncate select-all">
-              {embedUrl}
+              {previewUrl}
             </div>
           </div>
 
@@ -182,7 +190,7 @@ export default function EmbedPreviewClient({ username, eventTypes }: EmbedPrevie
               className="rounded-lg border border-slate-800 bg-white shadow-xl overflow-hidden"
             >
               <iframe
-                src={embedUrl}
+                src={previewUrl}
                 width="100%"
                 height="100%"
                 frameBorder="0"

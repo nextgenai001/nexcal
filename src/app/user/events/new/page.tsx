@@ -15,15 +15,13 @@ export default async function NewEventTypePage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-none w-full px-2 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">New Event Type</h1>
         <p className="text-sm text-slate-400">Create a new bookable event</p>
       </div>
       
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <EventTypeForm availabilitySchedules={availabilitySchedules} />
-      </div>
+      <EventTypeForm availabilitySchedules={availabilitySchedules} />
     </div>
   );
 }
