@@ -50,6 +50,11 @@ export default function SettingsForm({ user }: { user: any }) {
             className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
           >
             <option value="1">Monday (Recommended)</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
             <option value="0">Sunday</option>
           </select>
         </div>

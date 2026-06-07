@@ -290,9 +290,11 @@ export default function BookingWizard({ user, eventType }: Props) {
               </div>
 
               <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                {(user.weekStart === 1 ? ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]).map((day) => (
-                  <div key={day}>{day}</div>
-                ))}
+                {Array.from({ length: 7 }).map((_, i) => {
+                  const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+                  const dayName = dayNames[((user.weekStart ?? 1) + i) % 7];
+                  return <div key={i}>{dayName}</div>;
+                })}
               </div>
 
               <div className="grid grid-cols-7 gap-1">

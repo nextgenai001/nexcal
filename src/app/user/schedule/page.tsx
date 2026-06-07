@@ -25,11 +25,18 @@ export default async function SchedulePage() {
     }),
     prisma.user.findUnique({
       where: { id: user.id },
-      select: { globalBreaks: true }
+      select: { globalBreaks: true, weekStart: true, dateFormat: true }
     })
   ]);
 
-  const globalBreaks = Array.isArray(dbUser?.globalBreaks) ? dbUser.globalBreaks : [];
+  interface Range {
+    startTime: string;
+    endTime: string;
+  }
+
+  const globalBreaks = Array.isArray(dbUser?.globalBreaks)
+    ? (dbUser.globalBreaks as unknown as Range[])
+    : [];
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -42,6 +49,8 @@ export default async function SchedulePage() {
         availabilitySchedules={availabilitySchedules} 
         globalBreaks={globalBreaks} 
         dateOverrides={dateOverrides} 
+        weekStart={dbUser?.weekStart ?? 1}
+        dateFormat={dbUser?.dateFormat ?? "MM/dd/yyyy"}
       />
     </div>
   );

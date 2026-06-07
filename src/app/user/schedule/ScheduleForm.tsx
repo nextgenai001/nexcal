@@ -12,12 +12,35 @@ import {
   deleteDateOverrideAction
 } from "@/actions/schedule-actions";
 import { format } from "date-fns";
+import DatePicker from "@/components/ui/DatePicker";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 interface Range {
   startTime: string;
   endTime: string;
+}
+
+interface DaySchedule {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
+interface AvailabilitySchedule {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  schedules: DaySchedule[];
+}
+
+interface DateOverride {
+  id: string;
+  date: Date | string;
+  isBlocked: boolean;
+  startTime: string | null;
+  endTime: string | null;
+  reason?: string | null;
 }
 
 interface DayState {
@@ -31,16 +54,23 @@ export default function ScheduleForm({
   availabilitySchedules,
   globalBreaks = [],
   dateOverrides = [],
+  weekStart = 1,
+  dateFormat = "MM/dd/yyyy",
 }: {
-  availabilitySchedules: any[];
-  globalBreaks: any[];
-  dateOverrides: any[];
+  availabilitySchedules: AvailabilitySchedule[];
+  globalBreaks: Range[];
+  dateOverrides: DateOverride[];
+  weekStart?: number;
+  dateFormat?: string;
 }) {
   // Active availability schedule selection
   const [activeScheduleId, setActiveScheduleId] = useState<string>(() => {
     const def = availabilitySchedules.find((as) => as.isDefault) || availabilitySchedules[0];
     return def?.id || "";
   });
+
+  // Controlled state for custom reusable DatePicker
+  const [isoDateValue, setIsoDateValue] = useState("");
 
   // Current active tab on the right side: "hours" | "breaks" | "overrides"
   const [activeTab, setActiveTab] = useState<"hours" | "breaks" | "overrides">("hours");
@@ -67,7 +97,7 @@ export default function ScheduleForm({
   // Initialize global breaks
   const [breaks, setBreaks] = useState<Range[]>(() => {
     return Array.isArray(globalBreaks)
-      ? globalBreaks.map((b: any) => ({
+      ? globalBreaks.map((b: Range) => ({
           startTime: b.startTime || "12:00",
           endTime: b.endTime || "13:00",
         }))
@@ -78,15 +108,26 @@ export default function ScheduleForm({
   useEffect(() => {
     const activeSchedule = availabilitySchedules.find((as) => as.id === activeScheduleId);
     const sList = activeSchedule?.schedules || [];
+    
+    // Construct days ordered by weekStart
+    const ordered = [];
+    for (let i = 0; i < 7; i++) {
+      const dayIndex = (weekStart + i) % 7;
+      ordered.push({
+        dayOfWeek: dayIndex,
+        name: DAYS[dayIndex],
+      });
+    }
+
     setDays(
-      DAYS.map((name, index) => {
-        const daySchedules = sList.filter((s: any) => s.dayOfWeek === index);
+      ordered.map(({ dayOfWeek, name }) => {
+        const daySchedules = sList.filter((s: DaySchedule) => s.dayOfWeek === dayOfWeek);
         return {
-          dayOfWeek: index,
+          dayOfWeek,
           name,
           isActive: daySchedules.length > 0,
           ranges: daySchedules.length > 0
-            ? daySchedules.map((ds: any) => ({ startTime: ds.startTime, endTime: ds.endTime }))
+            ? daySchedules.map((ds: DaySchedule) => ({ startTime: ds.startTime, endTime: ds.endTime }))
             : [{ startTime: "09:00", endTime: "17:00" }],
         };
       })
@@ -94,7 +135,7 @@ export default function ScheduleForm({
     if (activeSchedule) {
       setRenameValue(activeSchedule.name);
     }
-  }, [activeScheduleId, availabilitySchedules]);
+  }, [activeScheduleId, availabilitySchedules, weekStart]);
 
   const toggleDayActive = (index: number, isActive: boolean) => {
     setDays(days.map((d, i) => (i === index ? { ...d, isActive } : d)));
@@ -233,6 +274,7 @@ export default function ScheduleForm({
       const res = await addDateOverrideAction(null, formData);
       if (res.success) {
         form.reset();
+        setIsoDateValue("");
       } else {
         alert(res.error || "Failed to add override");
       }
@@ -253,6 +295,21 @@ export default function ScheduleForm({
     success: false,
     error: null,
   });
+
+  const [localSuccess, setLocalSuccess] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  // Sync action state to local state
+  useEffect(() => {
+    setLocalSuccess(state.success);
+    setLocalError(state.error);
+  }, [state]);
+
+  // Clear local state when activeScheduleId changes
+  useEffect(() => {
+    setLocalSuccess(false);
+    setLocalError(null);
+  }, [activeScheduleId]);
 
   const activeSchedule = availabilitySchedules.find((as) => as.id === activeScheduleId);
 
@@ -473,12 +530,12 @@ export default function ScheduleForm({
           <div className="p-6">
             {activeTab === "hours" && (
               <form action={formAction} className="space-y-6">
-                {state.error && (
+                {localError && (
                   <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400 animate-in fade-in duration-200">
-                    {state.error}
+                    {localError}
                   </div>
                 )}
-                {state.success && (
+                {localSuccess && (
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-400 animate-in fade-in duration-200">
                     Weekly hours updated successfully.
                   </div>
@@ -580,12 +637,12 @@ export default function ScheduleForm({
 
             {activeTab === "breaks" && (
               <form action={formAction} className="space-y-6 animate-in fade-in duration-200">
-                {state.error && (
+                {localError && (
                   <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
-                    {state.error}
+                    {localError}
                   </div>
                 )}
-                {state.success && (
+                {localSuccess && (
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-400">
                     Global breaks updated successfully.
                   </div>
@@ -676,11 +733,14 @@ export default function ScheduleForm({
                     <form onSubmit={handleAddOverride} className="space-y-4">
                       <div>
                         <label className="text-xs font-semibold text-slate-400">Select Date</label>
-                        <input
-                          type="date"
+                        <DatePicker
                           name="date"
+                          value={isoDateValue}
+                          onChange={setIsoDateValue}
+                          dateFormat={dateFormat}
+                          weekStart={weekStart}
                           required
-                          className="mt-1 block w-full rounded-lg border border-slate-850 bg-slate-950 p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                          className="mt-1"
                         />
                       </div>
 
@@ -744,7 +804,7 @@ export default function ScheduleForm({
                           >
                             <div className="space-y-1">
                               <span className="text-sm font-bold text-white">
-                                {format(new Date(override.date), "MMM d, yyyy")}
+                                {format(new Date(override.date), dateFormat)}
                               </span>
                               <div className="flex items-center gap-1.5">
                                 <span
